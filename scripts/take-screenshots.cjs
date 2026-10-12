@@ -1,0 +1,30 @@
+// 开发工具：重新生成 README 界面截图（需 Hub 运行中 + 本机 Edge）
+const { chromium } = require('playwright-core');
+const fs = require('node:fs');
+const path = require('node:path');
+(async () => {
+  const outDir = path.join(__dirname, '..', 'docs', 'screenshots');
+  fs.mkdirSync(outDir, { recursive: true });
+  const browser = await chromium.launch({ channel: 'msedge', headless: true });
+  const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  const login = await page.request.post('http://127.0.0.1:4891/api/auth/login', { data: { username: process.env.HUB_USER || 'admin', password: process.env.HUB_PASSWORD } });
+  const { token } = await login.json();
+  await ctx.addCookies([{ name: 'hub_token', value: token, url: 'http://127.0.0.1:4891' }]);
+  await page.goto('http://127.0.0.1:4891/#/sessions');
+  await page.waitForTimeout(4000);
+  await page.screenshot({ path: path.join(outDir, 'sessions-dark.png') });
+  await page.goto('http://127.0.0.1:4891/#/settings');
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: path.join(outDir, 'settings-dark.png') });
+  await page.evaluate(() => { localStorage.setItem('hub-theme', 'light'); document.documentElement.classList.add('light-mode'); document.documentElement.classList.remove('dark'); });
+  await page.goto('http://127.0.0.1:4891/#/sessions');
+  await page.waitForTimeout(3000);
+  await page.screenshot({ path: path.join(outDir, 'sessions-light.png') });
+  await page.evaluate(() => { localStorage.setItem('hub-theme', 'dark'); document.documentElement.classList.remove('light-mode'); document.documentElement.classList.add('dark'); });
+  await page.goto('http://127.0.0.1:4891/#/collections');
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: path.join(outDir, 'collections.png') });
+  await browser.close();
+  console.log('screenshots regenerated → docs/screenshots/');
+})().catch(e => { console.error(e.message); process.exit(1); });

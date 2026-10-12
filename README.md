@@ -32,6 +32,27 @@
 - 🖥 **桌面客户端** — Electron，托盘常驻、自动同步、无边框窗口、自动更新
 - 🔄 **自动更新** — 客户端从 GitHub Releases 或 Hub 自动检查下载新版本
 
+## 📸 界面预览
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/sessions-dark.png" alt="会话仓库（黑夜模式）" /></td>
+    <td width="50%"><img src="docs/screenshots/sessions-light.png" alt="会话仓库（白天模式）" /></td>
+  </tr>
+  <tr>
+    <td width="50%">会话仓库 · 黑夜模式</td>
+    <td width="50%">会话仓库 · 白天模式</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/settings-dark.png" alt="设置与容灾备份" /></td>
+    <td width="50%"><img src="docs/screenshots/collections.png" alt="会话集" /></td>
+  </tr>
+  <tr>
+    <td width="50%">设置 · 同步云端与容灾备份</td>
+    <td width="50%">会话集</td>
+  </tr>
+</table>
+
 ## 🤖 支持的 Agent
 
 | Agent | 读取 | 写入 | 本地存储 |

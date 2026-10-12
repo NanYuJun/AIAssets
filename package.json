@@ -9,7 +9,8 @@
     "start:cli": "node src/cli/index.js",
     "test": "node test/run-tests.js",
     "build:web": "cd frontend && pnpm install && pnpm run build",
-    "build:desktop": "cd frontend && pnpm run build:electron && cd ../desktop-app && pnpm install && pnpm run build:win"
+    "build:desktop": "cd frontend && pnpm run build:electron && cd ../desktop-app && pnpm install && pnpm run build:win",
+    "screenshots": "node scripts/take-screenshots.cjs"
   },
   "keywords": [
     "ai",
@@ -31,5 +32,8 @@
     "type": "git",
     "url": "git+https://github.com/NanYuJun/AIAssets.git"
   },
-  "homepage": "https://github.com/NanYuJun/AIAssets#readme"
+  "homepage": "https://github.com/NanYuJun/AIAssets#readme",
+  "devDependencies": {
+    "playwright-core": "^1.64.0"
+  }
 }
