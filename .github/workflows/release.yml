@@ -45,3 +45,39 @@ jobs:
             desktop-app/dist/AIAssets Setup *.exe.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Build web frontend
+        working-directory: frontend
+        run: |
+          pnpm install
+          pnpm run build
+          pnpm run build:electron
+
+      - name: Build desktop app (Intel + Apple Silicon)
+        working-directory: desktop-app
+        run: |
+          pnpm install
+          pnpm run build:mac
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            desktop-app/dist/latest-mac.yml
+            desktop-app/dist/*.dmg
+            desktop-app/dist/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

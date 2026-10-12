@@ -22,10 +22,11 @@
    git push origin main --tags
    ```
 
-3. GitHub Actions 自动构建并创建 Release，附件包含：
-   - `latest.yml`（更新元数据）
-   - `AIAssets Setup <版本>.exe`
-   - `*.blockmap`（增量下载）
+3. GitHub Actions 并行构建 Windows + macOS，自动创建 Release，附件包含：
+   - `latest.yml`（Windows 更新元数据）
+   - `AIAssets Setup <版本>.exe` + `*.blockmap`
+   - `latest-mac.yml`（macOS 更新元数据）
+   - `AIAssets-<版本>-<arch>.dmg` / `*.zip`（Intel + Apple Silicon）
 
 ## 客户端如何更新
 

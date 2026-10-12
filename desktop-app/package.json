@@ -30,9 +30,23 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
-      "icon": "icon.ico"
+      "icon": "icon.png",
+      "category": "public.app-category.utilities"
     },
     "nsis": {
       "oneClick": true,
