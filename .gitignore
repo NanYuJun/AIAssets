@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+desktop-app/node_modules/
+
+# Build output
+dist/
+desktop-app/dist/
+desktop-app/app-ui/
+src/server/public-react/
+frontend/dist/
+
+# 运行时数据（含账号/Token/会话，绝不入库）
+hub-data/
+cloud-hub-storage/
+backup-tmp/
+work/
+
+# 本地工具（rclone 等大文件）
+tools/
+
+# 日志与临时文件
+*.log
+_*
+.DS_Store
+Thumbs.db

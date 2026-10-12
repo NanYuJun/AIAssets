@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+}
+
+
+/* 全局布局：页面不滚动，内容区内部滚动 */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+#root { height: 100%; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+.md-content h1 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 .5rem; color: #f4f4f5; }
+.md-content h2 { font-size: 1.1rem; font-weight: 600; margin: .85rem 0 .4rem; color: #f4f4f5; border-bottom: 1px solid #27272a; padding-bottom: .25rem; }
+.md-content h3 { font-size: .95rem; font-weight: 600; margin: .75rem 0 .3rem; color: #e4e4e7; }
+.md-content p { margin-bottom: .6rem; line-height: 1.6; }
+.md-content ul { list-style: disc; margin-left: 1.25rem; margin-bottom: .6rem; }
+.md-content ol { list-style: decimal; margin-left: 1.25rem; margin-bottom: .6rem; }
+.md-content code:not(pre code) { background: #27272a; color: #60a5fa; padding: .15rem .35rem; border-radius: 4px; font-size: .8em; font-family: monospace; }
+.md-content pre { background: #09090b; border: 1px solid #27272a; border-radius: 6px; padding: .75rem; overflow-x: auto; margin: .6rem 0; }
+.md-content pre code { font-family: monospace; font-size: .8rem; line-height: 1.5; color: #e4e4e7; }
+.md-content blockquote { border-left: 3px solid #3b82f6; padding-left: .75rem; margin: .6rem 0; color: #a1a1aa; }
+
+/* Electron frameless window: draggable titlebar area */
+.electron-app .electron-drag { -webkit-app-region: drag; }
+.electron-app .electron-drag button, .electron-app .electron-drag input, .electron-app .electron-drag select, .electron-app .electron-drag a { -webkit-app-region: no-drag; }
+
+/* ===== 白天模式（light-mode）===== */
+.light-mode { color-scheme: light; }
+.light-mode .bg-zinc-950 { background-color: #f8f8fa !important; }
+.light-mode .bg-zinc-900, .light-mode .bg-zinc-900\/40, .light-mode .bg-zinc-900\/60, .light-mode .bg-zinc-900\/30 { background-color: #ffffff !important; }
+.light-mode .bg-zinc-950\/60, .light-mode .bg-zinc-950\/40, .light-mode .bg-zinc-950\/20 { background-color: #f2f2f5 !important; }
+.light-mode .bg-zinc-800 { background-color: #e4e4e7 !important; }
+.light-mode .bg-zinc-800\/60 { background-color: #e8e8ec !important; }
+.light-mode .border-zinc-800, .light-mode .border-zinc-800\/80, .light-mode .border-zinc-800\/60, .light-mode .border-zinc-700, .light-mode .border-zinc-700\/80 { border-color: #d4d4d8 !important; }
+.light-mode .text-zinc-100, .light-mode .text-zinc-200 { color: #18181b !important; }
+.light-mode .text-zinc-300 { color: #27272a !important; }
+.light-mode .text-zinc-400, .light-mode .text-zinc-500 { color: #52525b !important; }
+.light-mode .text-zinc-600 { color: #71717a !important; }
+.light-mode .hover\:bg-zinc-900:hover, .light-mode .hover\:bg-zinc-800:hover, .light-mode .hover\:bg-zinc-700:hover { background-color: #ececf0 !important; }
+.light-mode .hover\:text-zinc-100:hover, .light-mode .hover\:text-zinc-200:hover, .light-mode .hover\:text-zinc-300:hover { color: #18181b !important; }
+.light-mode .backdrop-blur-md, .light-mode .backdrop-blur-sm { background-color: rgba(248,248,250,0.8) !important; }
+
+/* ===== 白天模式补充：透明度变体与组件细节 ===== */
+.light-mode .bg-zinc-900\/80 { background-color: rgba(255,255,255,0.9) !important; }
+.light-mode .bg-zinc-900\/70 { background-color: rgba(255,255,255,0.85) !important; }
+.light-mode .bg-zinc-900\/50 { background-color: rgba(255,255,255,0.75) !important; }
+.light-mode .bg-zinc-800\/80, .light-mode .bg-zinc-800\/50, .light-mode .bg-zinc-800\/30 { background-color: #ececf0 !important; }
+.light-mode .bg-zinc-950\/80, .light-mode .bg-zinc-950\/70, .light-mode .bg-zinc-950\/50 { background-color: #f2f2f5 !important; }
+.light-mode .border-zinc-800\/70, .light-mode .border-zinc-800\/50, .light-mode .border-zinc-800\/30 { border-color: #d4d4d8 !important; }
+.light-mode .bg-black\/70, .light-mode .bg-black\/40 { background-color: rgba(0,0,0,0.35) !important; }
+.light-mode .text-zinc-400.hover\:text-zinc-200:hover { color: #18181b !important; }
+.light-mode .hover\:bg-zinc-800\/80:hover, .light-mode .hover\:bg-zinc-800\/60:hover { background-color: #ececf0 !important; }
+.light-mode .bg-gradient-to-br { filter: none; }
+
+.light-mode .bg-zinc-800.text-zinc-400 { background-color: #e4e4e7 !important; color: #52525b !important; }

@@ -1,0 +1,35 @@
+{
+  "name": "aiassets",
+  "version": "1.0.0",
+  "description": "AIAssets — 你的 AI 资产管理中心：跨设备同步、跨 Agent 迁移、分享与容灾备份（Codex / WorkBuddy / Claude Code / Gemini / DSH / Pi）",
+  "type": "module",
+  "main": "src/server/index.js",
+  "scripts": {
+    "start": "node src/server/index.js",
+    "start:cli": "node src/cli/index.js",
+    "test": "node test/run-tests.js",
+    "build:web": "cd frontend && pnpm install && pnpm run build",
+    "build:desktop": "cd frontend && pnpm run build:electron && cd ../desktop-app && pnpm install && pnpm run build:win"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "claude-code",
+    "codex",
+    "gemini-cli",
+    "conversation",
+    "session-sync",
+    "mcp",
+    "self-hosted"
+  ],
+  "author": "NanYuJun",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NanYuJun/AIAssets.git"
+  },
+  "homepage": "https://github.com/NanYuJun/AIAssets#readme"
+}

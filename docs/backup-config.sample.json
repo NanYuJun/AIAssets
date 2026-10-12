@@ -1,0 +1,22 @@
+{
+  "enabled": false,
+  "frequencyHours": 6,
+  "localMirror": {
+    "enabled": false,
+    "dir": "D:/hub-backup"
+  },
+  "destinations": [
+    {
+      "id": "my-r2",
+      "type": "r2",
+      "name": "Cloudflare R2",
+      "bucket": "your-bucket",
+      "endpoint": "https://<account_id>.r2.cloudflarestorage.com",
+      "accessKey": "<access_key>",
+      "secretKey": "<secret_key>",
+      "prefix": "aiassets",
+      "keepVersions": 14,
+      "enabled": true
+    }
+  ]
+}

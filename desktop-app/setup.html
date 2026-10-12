@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>AIAssets - 配置</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #09090b; color: #e4e4e7; padding: 32px; }
+    h1 { font-size: 16px; margin-bottom: 4px; }
+    .sub { font-size: 12px; color: #71717a; margin-bottom: 24px; }
+    label { font-size: 12px; color: #a1a1aa; display: block; margin-bottom: 4px; }
+    input { font: inherit; width: 100%; background: #18181b; border: 1px solid #3f3f46; color: #e4e4e7; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+    input:focus { outline: none; border-color: #3b82f6; }
+    .toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .toggle input[type=checkbox] { width: 16px; height: 16px; accent-color: #3b82f6; }
+    .toggle label { margin: 0; color: #e4e4e7; font-size: 13px; }
+    button { font: inherit; width: 100%; padding: 12px; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #3b82f6; }
+    button:disabled { background: #3f3f46; cursor: not-allowed; }
+    .msg { font-size: 12px; margin-top: 12px; display: none; }
+    .msg.ok { color: #6ee7b7; display: block; }
+    .msg.err { color: #fda4af; display: block; }
+    .hidden { display: none !important; }
+    #initNotice { font-size: 12px; color: #fbbf24; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <h1>AIAssets</h1>
+  <p class="sub">输入 Hub 地址与账号密码即可连接。登录成功后自动生成本机设备 Token。</p>
+
+  <div id="loginSection">
+    <label>Hub 地址</label>
+    <input id="hubUrl" type="text" placeholder="http://192.168.1.100:4891">
+
+    <label>用户名</label>
+    <input id="username" type="text" autocomplete="username">
+
+    <label>密码</label>
+    <input id="password" type="password" autocomplete="current-password">
+  </div>
+
+  <div id="initSection" class="hidden">
+    <p id="initNotice">该 Hub 尚未初始化账号，请在下方设置管理员账号密码：</p>
+    <label>Hub 地址</label>
+    <input id="initHubUrl" type="text">
+
+    <label>设置用户名</label>
+    <input id="initUsername" type="text" autocomplete="username">
+
+    <label>设置密码（至少 8 位）</label>
+    <input id="initPassword" type="password" autocomplete="new-password">
+
+    <label>确认密码</label>
+    <input id="initPassword2" type="password" autocomplete="new-password">
+  </div>
+
+  <div class="toggle">
+    <input type="checkbox" id="autoSync" checked>
+    <label for="autoSync">自动同步（每 60 秒）</label>
+  </div>
+
+  <button id="saveBtn" onclick="save()">登录并连接</button>
+  <p class="msg" id="msg"></p>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+    let hubNotConfigured = false;
+
+    ipcRenderer.invoke('get-config').then(cfg => {
+      if (cfg) {
+        document.getElementById('hubUrl').value = cfg.hub || '';
+        document.getElementById('autoSync').checked = cfg.autoSync !== false;
+      }
+    });
+
+    function setMode(init) {
+      hubNotConfigured = init;
+      document.getElementById('loginSection').classList.toggle('hidden', init);
+      document.getElementById('initSection').classList.toggle('hidden', !init);
+      const btn = document.getElementById('saveBtn');
+      btn.textContent = init ? '初始化并连接' : '登录并连接';
+    }
+
+    async function deviceLogin(hubBase, username, password) {
+      const res = await fetch(hubBase + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username, password, deviceToken: true, deviceName: require('node:os').hostname() })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || '登录失败');
+      return data.deviceToken;
+    }
+
+    async function save() {
+      const hub = (document.getElementById(hubNotConfigured ? 'initHubUrl' : 'hubUrl').value || '').trim();
+      const username = document.getElementById(hubNotConfigured ? 'initUsername' : 'username').value.trim();
+      const password = document.getElementById(hubNotConfigured ? 'initPassword' : 'password').value;
+      const autoSync = document.getElementById('autoSync').checked;
+      const btn = document.getElementById('saveBtn');
+      const msg = document.getElementById('msg');
+      if (!hub) { msg.className = 'msg err'; msg.textContent = '请填写 Hub 地址'; return; }
+      if (!username || !password) { msg.className = 'msg err'; msg.textContent = '请填写用户名和密码'; return; }
+      btn.disabled = true;
+      try {
+        const hubBase = hub.replace(/\/+$/, '');
+        if (hubNotConfigured) {
+          const password2 = document.getElementById('initPassword2').value;
+          if (password.length < 8) { msg.className = 'msg err'; msg.textContent = '密码至少 8 位'; btn.disabled = false; return; }
+          if (password !== password2) { msg.className = 'msg err'; msg.textContent = '两次输入的密码不一致'; btn.disabled = false; return; }
+          btn.textContent = '初始化中...';
+          const setupRes = await fetch(hubBase + '/api/auth/setup', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ username, password, confirmPassword: password2 })
+          });
+          const setupData = await setupRes.json();
+          if (!setupRes.ok || !setupData.success) throw new Error(setupData.error || '初始化失败');
+        } else {
+          btn.textContent = '登录中...';
+        }
+        const deviceToken = await deviceLogin(hubBase, username, password);
+        await ipcRenderer.invoke('save-config', { hub: hubBase, token: deviceToken, autoSync });
+        msg.className = 'msg ok';
+        msg.textContent = hubNotConfigured ? '初始化成功，正在打开...' : '登录成功，正在打开...';
+        setTimeout(() => { window.close(); }, 800);
+      } catch (e) {
+        msg.className = 'msg err';
+        msg.textContent = (hubNotConfigured ? '初始化失败：' : '登录失败：') + e.message;
+        btn.disabled = false; btn.textContent = hubNotConfigured ? '初始化并连接' : '登录并连接';
+      }
+    }
+
+    // 地址输入后失焦时探测 Hub 是否已初始化，自动切换模式
+    document.getElementById('hubUrl').addEventListener('blur', async (e) => {
+      const hub = e.target.value.trim();
+      if (!hub) return;
+      try {
+        const res = await fetch(hub.replace(/\/+$/, '') + '/api/auth/status');
+        const data = await res.json();
+        if (data.success && data.configured === false) {
+          document.getElementById('initHubUrl').value = hub;
+          setMode(true);
+        } else {
+          setMode(false);
+        }
+      } catch {}
+    });
+  </script>
+</body>
+</html>

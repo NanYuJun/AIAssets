@@ -1,0 +1,24 @@
+AIAssets
+Copyright 2026 AIAssets contributors
+
+This product includes software developed by the AIAssets project
+(https://github.com/NanYuJun/AIAssets).
+
+如果你的产品基于本项目或其部分代码构建，请在你的产品中保留本 NOTICE 文件，
+或在产品文档/关于页面中注明：
+
+  "本产品基于开源项目 AIAssets 构建（https://github.com/NanYuJun/AIAssets），
+   遵循 Apache License 2.0 开源协议。"
+
+----------------------------------------------------------
+
+AIAssets 使用以下第三方开源组件（感谢原作者）：
+
+- React (https://react.dev) — MIT License
+- Vite (https://vite.dev) — MIT License
+- Tailwind CSS (https://tailwindcss.com) — MIT License
+- marked (https://marked.js.org) — MIT License
+- highlight.js (https://highlightjs.org) — BSD-3-Clause
+- Electron (https://www.electronjs.org) — MIT License
+- electron-updater — MIT License
+- rclone (https://rclone.org) — MIT License（随分发打包）

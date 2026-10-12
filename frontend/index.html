@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo-32.png" />
+    <link rel="apple-touch-icon" href="/logo-256.png" />
+    <title>AIAssets</title>
+    <script>
+      // 白天/黑夜模式：初始化在渲染前执行，避免闪烁
+      try {
+        var t = localStorage.getItem('hub-theme') || 'dark';
+        document.documentElement.classList.toggle('light-mode', t === 'light');
+        document.documentElement.classList.toggle('dark', t !== 'light');
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+{
+  "name": "aiassets",
+  "version": "1.0.0",
+  "description": "Agent Sync Hub 轻客户端 - 连接中心 Hub 自动同步本机 AI Agent 会话",
+  "author": "Agent Sync Hub",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build": "electron-builder --win --mac",
+    "release:prepare": "node make-latest.cjs"
+  },
+  "build": {
+    "appId": "com.aiassets.app",
+    "productName": "AIAssets",
+    "files": [
+      "main.js",
+      "setup.html",
+      "app-ui/**",
+      "preload.js",
+      "tray-icon.png",
+      "icon.png"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "YOUR_GITHUB_USERNAME",
+        "repo": "AIAssets"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "productName": "AIAssets",
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "license": "Apache-2.0"
+}

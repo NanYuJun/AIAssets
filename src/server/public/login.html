@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>登录 - AIAssets</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #09090b; color: #f4f4f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .card { width: 100%; max-width: 384px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px; }
+    h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    #subtitle { font-size: 12px; color: #a1a1aa; margin-bottom: 24px; }
+    label { display: block; font-size: 12px; color: #d4d4d8; margin-bottom: 6px; }
+    input { width: 100%; background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 8px 12px; font-size: 14px; color: #f4f4f5; margin-bottom: 14px; }
+    input:focus { outline: none; border-color: #3b82f6; }
+    button { width: 100%; padding: 8px 0; border: none; border-radius: 8px; background: #2563eb; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #3b82f6; }
+    button:disabled { background: #3f3f46; cursor: not-allowed; }
+    .hidden { display: none !important; }
+    #message { font-size: 12px; color: #fb7185; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><img src="/mascot-256.png" alt="AIAssets" style="width:36px;height:36px" /><h1 style="font-size:18px;font-weight:600;margin:0">AIAssets</h1></div>
+    <p id="subtitle">本 Hub 已启用访问控制，请登录后继续</p>
+
+    <div id="setupForm" class="hidden">
+      <div>
+        <label for="setupUsername">设置用户名</label>
+        <input id="setupUsername" type="text" autocomplete="username">
+      </div>
+      <div>
+        <label for="setupPassword">设置密码（至少 8 位）</label>
+        <input id="setupPassword" type="password" autocomplete="new-password">
+      </div>
+      <div>
+        <label for="setupPassword2">确认密码</label>
+        <input id="setupPassword2" type="password" autocomplete="new-password">
+      </div>
+      <button id="setupButton">初始化账号</button>
+    </div>
+
+    <div id="loginForm" class="hidden">
+      <div>
+        <label for="loginUsername">用户名</label>
+        <input id="loginUsername" type="text" autocomplete="username">
+      </div>
+      <div>
+        <label for="loginPassword">密码</label>
+        <input id="loginPassword" type="password" autocomplete="current-password">
+      </div>
+      <button id="loginButton">登录</button>
+    </div>
+
+    <p id="message" class="hidden"></p>
+  </div>
+
+  <script>
+    const msg = text => {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.classList.remove('hidden');
+    };
+
+    fetch('/api/auth/status').then(r => r.json()).then(data => {
+      if (!data.configured) {
+        document.getElementById('subtitle').innerText = '首次使用：设置管理员账号密码';
+        document.getElementById('setupForm').classList.remove('hidden');
+      } else {
+        document.getElementById('loginForm').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('setupButton').onclick = async () => {
+      const btn = document.getElementById('setupButton');
+      const username = document.getElementById('setupUsername').value.trim();
+      const password = document.getElementById('setupPassword').value;
+      const password2 = document.getElementById('setupPassword2').value;
+      if (!username || username.length < 2) { msg('用户名至少 2 个字符'); return; }
+      if (password.length < 8) { msg('密码至少 8 位'); return; }
+      if (password !== password2) { msg('两次输入的密码不一致'); return; }
+      btn.disabled = true; btn.textContent = '初始化中...';
+      try {
+        const res = await fetch('/api/auth/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, confirmPassword: password2 })
+        });
+        const data = await res.json();
+        if (data.success) location.href = '/';
+        else msg(data.error || '初始化失败');
+      } catch (e) { msg('网络错误：' + e.message); }
+      btn.disabled = false; btn.textContent = '初始化账号';
+    };
+
+    document.getElementById('loginButton').onclick = async () => {
+      const btn = document.getElementById('loginButton');
+      btn.disabled = true; btn.textContent = '登录中...';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('loginUsername').value,
+            password: document.getElementById('loginPassword').value
+          })
+        });
+        const data = await res.json();
+        if (data.success) location.href = '/';
+        else msg(data.error || '登录失败');
+      } catch (e) { msg('网络错误：' + e.message); }
+      btn.disabled = false; btn.textContent = '登录';
+    };
+  </script>
+</body>
+</html>
