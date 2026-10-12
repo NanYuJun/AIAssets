@@ -4,13 +4,13 @@
 
 AIAssets 采用「中心 Hub + 多客户端」架构。
 
-- Hub：常开电脑上运行，负责存储、Web UI、鉴权、分享、全文搜索
+- Hub：服务端上运行，负责存储、Web UI、鉴权、分享、全文搜索
 - 轻客户端：其他电脑上运行，负责读取本机 Agent 会话推送到 Hub / 拉取 Hub 会话注入本机 Agent
 - 客户端两种形态：Electron 桌面应用（推荐）和 CLI 命令行（轻量脚本）
 
 ---
 
-## 一、Hub 部署（常开电脑）
+## 一、Hub 部署（服务端）
 
 ### 1.1 前置要求
 
@@ -19,7 +19,7 @@ AIAssets 采用「中心 Hub + 多客户端」架构。
 
 ### 1.2 部署步骤
 
-1. 拷贝整个 agent-sync-hub 目录到常开电脑（不含 node_modules、dist、hub-data）
+1. 拷贝整个 AIAssets 项目目录到服务端（不含 node_modules、dist、hub-data）
 2. 启动：node src/server/index.js（监听 http://0.0.0.0:4891）
 3. 本机浏览器打开 http://localhost:4891，设置页初始化管理员账号
 4. 开机自启（可选）：
@@ -27,7 +27,7 @@ AIAssets 采用「中心 Hub + 多客户端」架构。
 ```bash
 # pm2 方式
 npm install -g pm2
-pm2 start src/server/index.js --name agent-sync-hub
+pm2 start src/server/index.js --name aiassets
 pm2 save && pm2 startup
 ```
 
@@ -57,7 +57,7 @@ cloudflared tunnel --url http://localhost:4891
 
 #### 构建
 
-在开发机（或常开电脑）上执行一次：
+在开发机（或服务端）上执行一次：
 
 ```bash
 cd desktop-app
@@ -99,7 +99,7 @@ pnpm run build:mac     # macOS 安装包
 
 #### 步骤
 
-1. 拷贝 src/ 目录（或整个 agent-sync-hub）到本机
+1. 拷贝项目目录到本机
 2. 在中心 Hub 的设置页 Token 管理 -> 新建 Token
 3. 配置并同步：
 
@@ -153,7 +153,7 @@ node src/client/index.js daemon
 ## 四、目录结构
 
 ```
-agent-sync-hub/
+AIAssets/
   src/
     server/index.js       # Hub 服务端（单文件，零依赖）
     client/index.js       # CLI 轻客户端
@@ -182,7 +182,7 @@ agent-sync-hub/
 ## 五、FAQ
 
 ### Q: 两台设备都需要部署 Hub 吗？
-A: 不需要。只有常开电脑需要跑 Hub。其他设备只跑轻客户端，连到 Hub 即可。
+A: 不需要。只有服务端需要跑 Hub。其他设备只跑轻客户端，连到 Hub 即可。
 
 ### Q: 轻客户端需要安装 Node 环境吗？
 A: Electron 桌面应用不需要，安装包已内置 Electron 运行时。CLI 方式需要 Node.js 24+。

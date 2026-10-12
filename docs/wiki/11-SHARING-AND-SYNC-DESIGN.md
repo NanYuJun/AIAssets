@@ -8,7 +8,7 @@
 
 ## 2. Immich 的可借鉴逻辑
 
-| Immich 机制 | 映射到 Agent Sync Hub |
+| Immich 机制 | 映射到 AIAssets |
 | :--- | :--- |
 | 相册 (Album) | 会话集 (Session Collection)：按项目或主题打包一组会话 |
 | 分享链接 + 有效期 + 密码 | 分享令牌 (Share Token)：短 ID + 过期时间 + 可选访问码 |
