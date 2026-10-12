@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import BackupSection from '../components/BackupSection'
 
-const AGENT_LABELS = { codex: 'Codex', workbuddy: 'WorkBuddy', pi: 'Pi', gemini: 'Gemini', dsh: 'DSH', claude: 'Claude' }
-const ALL_AGENTS = ['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude']
+const AGENT_LABELS = { codex: 'Codex', workbuddy: 'WorkBuddy', pi: 'Pi', gemini: 'Gemini', dsh: 'DSH', claude: 'Claude', zcode: 'ZCode', opencode: 'OpenCode', grok: 'Grok', cursor: 'Cursor' }
+const ALL_AGENTS = ['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude', 'zcode', 'opencode', 'grok', 'cursor']
 
 export default function Settings({ showToast }) {
   const [auth, setAuth] = useState(null)

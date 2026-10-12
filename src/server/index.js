@@ -16,6 +16,14 @@ import { DshReader } from '../adapters/dsh/reader.js';
 import { DshWriter } from '../adapters/dsh/writer.js';
 import { ClaudeReader } from '../adapters/claude/reader.js';
 import { ClaudeWriter } from '../adapters/claude/writer.js';
+import { ZCodeReader } from '../adapters/zcode/reader.js';
+import { ZCodeWriter } from '../adapters/zcode/writer.js';
+import { OpenCodeReader } from '../adapters/opencode/reader.js';
+import { OpenCodeWriter } from '../adapters/opencode/writer.js';
+import { GrokReader } from '../adapters/grok/reader.js';
+import { GrokWriter } from '../adapters/grok/writer.js';
+import { CursorReader } from '../adapters/cursor/reader.js';
+import { CursorWriter } from '../adapters/cursor/writer.js';
 import { BackupManager, PROVIDER_DEFAULTS } from '../core/backup.js';
 import { ConfigManager } from '../core/config.js';
 import { Cleaner } from '../core/cleaner.js';
@@ -245,7 +253,7 @@ async function resolveSessionCanonical(sessionId, catalogs, projectResolver) {
 }
 
 async function resolveSessionForTransfer(sessionId, targetAgent, sources, projectResolver) {
-  const sourceOrder = ['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude'].filter(agent => agent !== targetAgent);
+  const sourceOrder = ['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude', 'zcode', 'opencode', 'grok', 'cursor'].filter(agent => agent !== targetAgent);
 
   for (const sourceAgent of sourceOrder) {
     const files = sourceAgent === 'codex' ? sources.codexFiles
@@ -253,6 +261,10 @@ async function resolveSessionForTransfer(sessionId, targetAgent, sources, projec
       : sourceAgent === 'pi' ? sources.piFiles
       : sourceAgent === 'gemini' ? sources.geminiFiles
       : sourceAgent === 'claude' ? sources.claudeFiles
+      : sourceAgent === 'zcode' ? sources.zcodeFiles
+      : sourceAgent === 'opencode' ? sources.opencodeFiles
+      : sourceAgent === 'grok' ? sources.grokFiles
+      : sourceAgent === 'cursor' ? sources.cursorFiles
       : sources.dshFiles;
     const filePath = findSessionFile(files, sessionId);
     if (!filePath) continue;
@@ -267,7 +279,15 @@ async function resolveSessionForTransfer(sessionId, targetAgent, sources, projec
             ? await GeminiReader.parseSession(filePath, projectResolver)
             : sourceAgent === 'claude'
               ? await ClaudeReader.parseSession(filePath, projectResolver)
-              : await DshReader.parseSession(filePath, projectResolver);
+              : sourceAgent === 'zcode'
+                ? await ZCodeReader.parseSession(filePath, projectResolver)
+                : sourceAgent === 'opencode'
+                  ? await OpenCodeReader.parseSession(filePath, projectResolver)
+                  : sourceAgent === 'grok'
+                    ? await GrokReader.parseSession(filePath, projectResolver)
+                    : sourceAgent === 'cursor'
+                      ? await CursorReader.parseSession(filePath, projectResolver)
+                      : await DshReader.parseSession(filePath, projectResolver);
     canonical.sourceAgent = sourceAgent;
     canonical.project.name = projectResolver(canonical.project.originalCwd);
     return { canonical, sourceLocation: 'local', sourceAgent };
@@ -396,9 +416,41 @@ function rebuildLocalCache() {
         } catch {}
       }
 
+      const zcodeFiles = ZCodeReader.scanAllSessions();
+      for (let i = 0; i < Math.min(zcodeFiles.length, 80); i++) {
+        try {
+          const s = await ZCodeReader.fastScanSummary(zcodeFiles[i], projectResolver);
+          if (s) list.push(s);
+        } catch {}
+      }
+
+      const opencodeFiles = OpenCodeReader.scanAllSessions();
+      for (let i = 0; i < Math.min(opencodeFiles.length, 80); i++) {
+        try {
+          const s = await OpenCodeReader.fastScanSummary(opencodeFiles[i], projectResolver);
+          if (s) list.push(s);
+        } catch {}
+      }
+
+      const grokFiles = GrokReader.scanAllSessions();
+      for (let i = 0; i < Math.min(grokFiles.length, 80); i++) {
+        try {
+          const s = await GrokReader.fastScanSummary(grokFiles[i], projectResolver);
+          if (s) list.push(s);
+        } catch {}
+      }
+
+      const cursorFiles = CursorReader.scanAllSessions();
+      for (let i = 0; i < Math.min(cursorFiles.length, 80); i++) {
+        try {
+          const s = await CursorReader.fastScanSummary(cursorFiles[i], projectResolver);
+          if (s) list.push(s);
+        } catch {}
+      }
+
       list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
       cachedLocalItems = list;
-      totalFoundSessions = codexFiles.length + wbFiles.length + piFiles.length + geminiFiles.length + dshFiles.length + claudeFiles.length;
+      totalFoundSessions = codexFiles.length + wbFiles.length + piFiles.length + geminiFiles.length + dshFiles.length + claudeFiles.length + zcodeFiles.length + opencodeFiles.length + grokFiles.length + cursorFiles.length;
       console.log(`✅ 缓存预热完成: ${cachedLocalItems.length} 个多助手会话已常驻内存`);
     } catch (err) {
       console.error('缓存初始化异常:', err);
@@ -427,7 +479,11 @@ async function runAutoSync() {
     pi: { scan: () => PiReader.scanAllSessions(), parse: (f) => PiReader.parseSession(f, projectResolver) },
     gemini: { scan: () => GeminiReader.scanAllSessions(), parse: (f) => GeminiReader.parseSession(f, projectResolver) },
     dsh: { scan: () => DshReader.scanAllSessions(), parse: (f) => DshReader.parseSession(f, projectResolver) },
-    claude: { scan: () => ClaudeReader.scanAllSessions(), parse: (f) => ClaudeReader.parseSession(f, projectResolver) }
+    claude: { scan: () => ClaudeReader.scanAllSessions(), parse: (f) => ClaudeReader.parseSession(f, projectResolver) },
+    zcode: { scan: () => ZCodeReader.scanAllSessions(), parse: (f) => ZCodeReader.parseSession(f, projectResolver) },
+    opencode: { scan: () => OpenCodeReader.scanAllSessions(), parse: (f) => OpenCodeReader.parseSession(f, projectResolver) },
+    grok: { scan: () => GrokReader.scanAllSessions(), parse: (f) => GrokReader.parseSession(f, projectResolver) },
+    cursor: { scan: () => CursorReader.scanAllSessions(), parse: (f) => CursorReader.parseSession(f, projectResolver) }
   };
 
   let pushed = 0;
@@ -859,7 +915,7 @@ const server = http.createServer(async (req, res) => {
   // 0. API: 从目标 Agent 自己的数据源实时读取项目列表
   if (pathname === '/api/projects' && req.method === 'GET') {
     const agent = url.searchParams.get('agent') || 'codex';
-    if (!['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude'].includes(agent)) {
+    if (!['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude', 'zcode', 'opencode', 'grok', 'cursor'].includes(agent)) {
       return sendJson(res, 400, { success: false, error: `不支持的目标 Agent: ${agent}` });
     }
 
@@ -1020,7 +1076,7 @@ const server = http.createServer(async (req, res) => {
       const body = await parseBody(req);
       const cfg = autoSync.config;
       if (body.enabled !== undefined) cfg.enabled = Boolean(body.enabled);
-      if (Array.isArray(body.agents)) cfg.agents = body.agents.filter(a => ['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude'].includes(a));
+      if (Array.isArray(body.agents)) cfg.agents = body.agents.filter(a => ['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude', 'zcode', 'opencode', 'grok', 'cursor'].includes(a));
       if (Number.isFinite(body.intervalSec)) cfg.intervalSec = Math.min(86400, Math.max(60, Number(body.intervalSec)));
       autoSync.saveConfig(cfg);
       autoSync.ensureTimer(runAutoSync);
@@ -1272,7 +1328,7 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 400, { success: false, error: '非法会话 ID' });
       }
       const targetAgent = url.searchParams.get('agent');
-      if (!['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude'].includes(targetAgent)) {
+      if (!['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude', 'zcode', 'opencode', 'grok', 'cursor'].includes(targetAgent)) {
         return sendJson(res, 400, { success: false, error: '缺少 agent 参数（codex/workbuddy/pi）' });
       }
 
@@ -1281,6 +1337,10 @@ const server = http.createServer(async (req, res) => {
         : targetAgent === 'pi' ? PiReader.scanAllSessions()
         : targetAgent === 'gemini' ? GeminiReader.scanAllSessions()
         : targetAgent === 'claude' ? ClaudeReader.scanAllSessions()
+        : targetAgent === 'zcode' ? ZCodeReader.scanAllSessions()
+        : targetAgent === 'opencode' ? OpenCodeReader.scanAllSessions()
+        : targetAgent === 'grok' ? GrokReader.scanAllSessions()
+        : targetAgent === 'cursor' ? CursorReader.scanAllSessions()
         : DshReader.scanAllSessions();
       const filePath = findSessionFile(files, id);
       if (!filePath) {
@@ -1382,7 +1442,7 @@ const server = http.createServer(async (req, res) => {
           typeof targetProjectRoot !== 'string' || !targetProjectRoot.trim()) {
         return sendJson(res, 400, { success: false, error: '缺少 sessionIds 或 targetProjectRoot' });
       }
-      if (!['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude'].includes(targetAgent)) {
+      if (!['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude', 'zcode', 'opencode', 'grok', 'cursor'].includes(targetAgent)) {
         return sendJson(res, 400, { success: false, error: `不支持的目标 Agent: ${targetAgent}` });
       }
 
@@ -1394,7 +1454,11 @@ const server = http.createServer(async (req, res) => {
         piFiles: PiReader.scanAllSessions(),
         geminiFiles: GeminiReader.scanAllSessions(),
         dshFiles: DshReader.scanAllSessions(),
-        claudeFiles: ClaudeReader.scanAllSessions()
+        claudeFiles: ClaudeReader.scanAllSessions(),
+        zcodeFiles: ZCodeReader.scanAllSessions(),
+        opencodeFiles: OpenCodeReader.scanAllSessions(),
+        grokFiles: GrokReader.scanAllSessions(),
+        cursorFiles: CursorReader.scanAllSessions()
       };
       const resolvedSessions = [];
       const missingIds = [];
@@ -1434,6 +1498,18 @@ const server = http.createServer(async (req, res) => {
           } else if (targetAgent === 'claude') {
             r = await ClaudeWriter.injectSession(canonical, targetProjectRoot);
             injected.push({ id: item.id, target: 'claude', path: r.filePath, sourceLocation: item.sourceLocation, sourceAgent: item.sourceAgent });
+          } else if (targetAgent === 'zcode') {
+            r = await ZCodeWriter.injectSession(canonical, targetProjectRoot);
+            injected.push({ id: item.id, target: 'zcode', path: r.path, sourceLocation: item.sourceLocation, sourceAgent: item.sourceAgent });
+          } else if (targetAgent === 'opencode') {
+            r = await OpenCodeWriter.injectSession(canonical, targetProjectRoot);
+            injected.push({ id: item.id, target: 'opencode', path: r.path, sourceLocation: item.sourceLocation, sourceAgent: item.sourceAgent });
+          } else if (targetAgent === 'grok') {
+            r = await GrokWriter.injectSession(canonical, targetProjectRoot);
+            injected.push({ id: item.id, target: 'grok', path: r.filePath, sourceLocation: item.sourceLocation, sourceAgent: item.sourceAgent });
+          } else if (targetAgent === 'cursor') {
+            r = await CursorWriter.injectSession(canonical);
+            injected.push({ id: item.id, target: 'cursor', path: r.path, sourceLocation: item.sourceLocation, sourceAgent: item.sourceAgent });
           }
         }
       }
@@ -1775,7 +1851,7 @@ const server = http.createServer(async (req, res) => {
       if (!session || typeof session !== 'object' || typeof session.id !== 'string' || !session.id || path.basename(session.id) !== session.id) {
         return sendJson(res, 400, { success: false, error: '缺少合法的 session 对象' });
       }
-      if (!session.sourceAgent || !['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude'].includes(session.sourceAgent)) {
+      if (!session.sourceAgent || !['codex', 'workbuddy', 'pi', 'gemini', 'dsh', 'claude', 'zcode', 'opencode', 'grok', 'cursor'].includes(session.sourceAgent)) {
         session.sourceAgent = session.sourceAgent || 'codex';
       }
       const catalogs = loadProjectCatalogs();

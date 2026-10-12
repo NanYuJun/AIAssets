@@ -3,13 +3,18 @@ import { api, copyText } from '../lib/api'
 import { useDialog } from '../components/DialogProvider'
 import RecycleBinDialog from '../components/RecycleBinDialog'
 
-const AGENT_LABELS = { codex: 'Codex', workbuddy: 'WorkBuddy', pi: 'Pi', gemini: 'Gemini', dsh: 'DSH' }
+const AGENT_LABELS = { codex: 'Codex', workbuddy: 'WorkBuddy', pi: 'Pi', gemini: 'Gemini', dsh: 'DSH', claude: 'Claude', zcode: 'ZCode', opencode: 'OpenCode', grok: 'Grok', cursor: 'Cursor' }
 const AGENT_STYLES = {
   codex: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
   workbuddy: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
   pi: 'bg-orange-500/15 text-orange-400 border-orange-500/30',
   gemini: 'bg-teal-500/15 text-teal-400 border-teal-500/30',
-  dsh: 'bg-lime-500/15 text-lime-400 border-lime-500/30'
+  dsh: 'bg-lime-500/15 text-lime-400 border-lime-500/30',
+  claude: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  zcode: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+  opencode: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+  grok: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
+  cursor: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30'
 }
 
 const genAccessCode = () => Array.from({ length: 6 }, () => 'abcdefghjkmnpqrstuvwxyz23456789'[Math.floor(Math.random() * 31)]).join('')
@@ -329,7 +334,7 @@ export default function AssetLibrary({ showToast, refreshKey, onRefresh, isGuest
           </button>
           {!isGuest && (<input value={search} onChange={e => setSearch(e.target.value)} placeholder="搜索标题或项目..." className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs w-44" />)}
           <div className="inline-flex rounded-lg border border-zinc-800 bg-zinc-900 p-0.5">
-            {['all', 'codex', 'workbuddy', 'pi', 'gemini', 'dsh'].map(a => (
+            {['all', 'codex', 'workbuddy', 'claude', 'pi', 'gemini', 'dsh', 'zcode', 'opencode', 'grok', 'cursor'].map(a => (
               <button key={a} onClick={() => setAgentFilter(a)} className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${agentFilter === a ? 'bg-zinc-800 text-zinc-200' : 'text-zinc-400 hover:text-zinc-200'}`}>{a === 'all' ? '全部' : AGENT_LABELS[a]}</button>
             ))}
           </div>
