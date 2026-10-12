@@ -20,7 +20,7 @@
 
 ## ✨ 特性
 
-- 🔀 **跨 Agent 迁移** — Codex ↔ WorkBuddy ↔ Claude Code ↔ Gemini CLI ↔ DSH (DeepSeek) ↔ Pi，任意方向互导，且保留 AI 生成的会话标题
+- 🔀 **跨 Agent 迁移** — 10 个 Agent 任意互导：Codex / WorkBuddy / Claude Code / Gemini CLI / DSH (DeepSeek) / Pi / ZCode / OpenCode / Grok Build / Cursor，且保留 AI 生成的会话标题
 - ☁️ **跨设备同步** — 服务端做 Hub，笔记本/台式机轻客户端自动双向同步（频率可调）
 - 🔗 **分享** — 为朋友生成带访问码 + 查看次数上限的分享链接，一键导入到他的 Hub
 - 🗂 **会话集** — 按项目组织会话，一键打包导出 ZIP
@@ -63,6 +63,10 @@
 | Gemini CLI (Antigravity) | ✅ | ✅ | `~/.gemini/antigravity/` |
 | DSH (DeepSeek) | ✅ | ✅ | `~/.dsh/sessions/`（zstd） |
 | Pi | ✅ | ✅ | `~/.pi/agent/sessions/` |
+| ZCode（智谱 GLM） | ✅ | ✅ | `~/.zcode/cli/db/` |
+| OpenCode | ✅ | ✅ | `~/.local/share/opencode/` |
+| Grok Build (xAI) | ✅ | ✅ | `~/.grok/sessions/` |
+| Cursor | ✅ | ✅ | `%APPDATA%/Cursor/` |
 
 ## 🏗 架构
 

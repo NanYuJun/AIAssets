@@ -1,7 +1,7 @@
 {
   "name": "aiassets",
   "version": "1.0.0",
-  "description": "AIAssets — 你的 AI 资产管理中心：跨设备同步、跨 Agent 迁移、分享与容灾备份（Codex / WorkBuddy / Claude Code / Gemini / DSH / Pi）",
+  "description": "AIAssets — 你的 AI 资产管理中心：跨设备同步、跨 Agent 迁移、分享与容灾备份（支持 10 个 Agent：Codex / WorkBuddy / Claude Code / Gemini / DSH / Pi / ZCode / OpenCode / Grok Build / Cursor）",
   "type": "module",
   "main": "src/server/index.js",
   "scripts": {

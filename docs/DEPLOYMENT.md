@@ -163,15 +163,19 @@ AIAssets/
       pi/                 # Pi
       gemini/             # Gemini
       dsh/                # DSH (DeepSeek)
-      claude/             # Claude Code（预留，未接入 Hub）
+      claude/             # Claude Code
+      zcode/              # ZCode（智谱 GLM Harness）
+      opencode/           # OpenCode
+      grok/               # Grok Build（xAI）
+      cursor/             # Cursor
     core/                 # 公共工具
     cli/                  # 旧版 CLI
   desktop-app/
-    main.js               # Electron 主进程
+    main.js               # Electron 主进程（含自动更新）
     setup.html            # 首次配对页
     package.json          # electron-builder 配置
   frontend/               # React 前端源码
-  docs/wiki/              # 设计文档（14 篇）
+  docs/wiki/              # 设计文档（15 篇）
   hub-data/               # Hub 运行时数据
   cloud-hub-storage/      # 云端会话文件存储
   package.json            # 项目根（无 npm 依赖）
@@ -196,5 +200,5 @@ A: 所有远程 API 请求都要求 Bearer Token 或登录 Cookie；公网建议
 ### Q: 自动上云是什么？
 A: Hub 服务端的定时任务，轮询本机 Agent 目录，把新会话自动备份到云端存储。默认关闭，在设置页开启。
 
-### Q: Claude Code 什么时候支持？
-A: 适配器（src/adapters/claude/）已就绪，Hub 接入即将完成。
+### Q: 哪些 Agent 支持自动上云？
+A: 全部 10 个支持 Agent（Codex / WorkBuddy / Claude Code / Gemini / DSH / Pi / ZCode / OpenCode / Grok Build / Cursor）都可在设置页开启自动上云。

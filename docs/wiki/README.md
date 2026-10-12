@@ -22,7 +22,8 @@
 | 05 | [WorkBuddy 存储逆向](./05-WORKBUDDY-STORAGE-REVERSE.md) | SQLite 表结构、Projects 目录 Slug 算法、JSONL 消息格式 |
 | 06 | [Codex 存储逆向](./06-CODEX-STORAGE-REVERSE.md) | Rollout JSONL 结构、系统提示词深度降噪规则、生成标题读取 |
 | 10 | [Pi 适配器规范](./10-PI-ADAPTER.md) | version 3 JSONL 结构、Reader 解析与 Writer 注入 |
-| 14 | [多 Agent 适配与设置中心](./14-MULTI-AGENT-SETTINGS.md) | Gemini / DSH / Claude 适配与设置页实现 |
+| 14 | [多 Agent 适配与设置中心](./14-MULTI-AGENT-SETTINGS.md) | Gemini / DSH / Claude 适配与设置页实现（自动上云/容灾备份/回收站 UI） |
+| 16 | [Agent 扩展：ZCode / OpenCode / Grok / Cursor](./16-AGENT-EXPANSION.md) | 四个新 Agent 的存储逆向、读写策略与服务端注册清单 |
 
 ### 🔄 同步、迁移与分享
 
