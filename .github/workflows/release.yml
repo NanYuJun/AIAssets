@@ -81,3 +81,38 @@ jobs:
             desktop-app/dist/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Build web frontend
+        working-directory: frontend
+        run: |
+          pnpm install
+          pnpm run build
+          pnpm run build:electron
+
+      - name: Build desktop app
+        working-directory: desktop-app
+        run: |
+          pnpm install
+          pnpm run build:linux
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            desktop-app/dist/*.AppImage
+            desktop-app/dist/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

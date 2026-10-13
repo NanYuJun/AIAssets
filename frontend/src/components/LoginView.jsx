@@ -75,7 +75,7 @@ export default function LoginView({ onLogin, showToast }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={submit} className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-        <div className="flex items-center gap-2.5 mb-1"><img src="/mascot-128.png" className="h-9 w-9" alt="AIAssets" /><h1 className="text-lg font-semibold">AIAssets</h1></div>
+        <div className="flex items-center gap-2.5 mb-1"><img src="mascot-128.png" className="h-9 w-9" alt="AIAssets" /><h1 className="text-lg font-semibold">AIAssets</h1></div>
         <p className="text-xs text-zinc-400 mb-6">{mode === 'init' ? '该 Hub 尚未初始化，请设置管理员账号密码' : '输入 Hub 地址与账号密码连接'}</p>
         <label className="block text-xs text-zinc-300 mb-1.5">Hub 地址</label>
         <input value={hub} onChange={e => setHub(e.target.value)} placeholder="http://192.168.1.100:4891" className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm mb-4" />

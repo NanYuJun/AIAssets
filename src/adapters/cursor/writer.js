@@ -10,7 +10,11 @@ import { execSqlite } from '../../core/sqlite.js';
  */
 export class CursorWriter {
   static getDbPath() {
-    return path.join(os.homedir(), 'AppData', 'Roaming', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+    switch (process.platform) {
+      case 'win32': return path.join(os.homedir(), 'AppData', 'Roaming', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+      case 'darwin': return path.join(os.homedir(), 'Library', 'Application Support', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+      default: return path.join(os.homedir(), '.config', 'Cursor', 'User', 'globalStorage', 'state.vscdb');
+    }
   }
 
   static async injectSession(canonical) {

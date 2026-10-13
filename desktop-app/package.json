@@ -9,7 +9,8 @@
     "build:win": "electron-builder --win",
     "build:mac": "electron-builder --mac",
     "build": "electron-builder --win --mac",
-    "release:prepare": "node make-latest.cjs"
+    "release:prepare": "node make-latest.cjs",
+    "build:linux": "electron-builder --linux"
   },
   "build": {
     "appId": "com.aiassets.app",
@@ -59,7 +60,15 @@
         "owner": "YOUR_GITHUB_USERNAME",
         "repo": "AIAssets"
       }
-    ]
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "icon.png",
+      "category": "Utility"
+    }
   },
   "devDependencies": {
     "electron": "^33.0.0",

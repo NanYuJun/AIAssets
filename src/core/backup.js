@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 
-const RCLONE_PATH = process.env.RCLONE_PATH || path.resolve(process.cwd(), 'tools/rclone.exe');
+const RCLONE_NAME = process.platform === 'win32' ? 'rclone.exe' : 'rclone';
+const RCLONE_PATH = process.env.RCLONE_PATH || path.resolve(process.cwd(), 'tools', RCLONE_NAME);
 
 const PROVIDER_DEFAULTS = {
   r2: { name: 'Cloudflare R2', endpoint: 'https://<account_id>.r2.cloudflarestorage.com' },
@@ -13,10 +14,19 @@ const PROVIDER_DEFAULTS = {
 
 function runRclone(args, timeoutMs = 10 * 60 * 1000) {
   return new Promise((resolve) => {
-    if (!fs.existsSync(RCLONE_PATH)) return resolve({ ok: false, error: 'rclone.exe 不存在（tools/rclone.exe）' });
+    if (!fs.existsSync(RCLONE_PATH)) return resolve({ ok: false, error: 'rclone 不存在（tools/' + RCLONE_NAME + '）' });
     execFile(RCLONE_PATH, args, { timeout: timeoutMs, windowsHide: true }, (err, stdout, stderr) => {
       if (err) resolve({ ok: false, error: (stderr || err.message || '').slice(0, 500) });
       else resolve({ ok: true, output: String(stdout || '').slice(-2000) });
+    });
+  });
+}
+
+function runTar(args, cwd, timeoutMs = 10 * 60 * 1000) {
+  return new Promise((resolve) => {
+    execFile('tar', args, { timeout: timeoutMs, windowsHide: true, cwd }, (err) => {
+      if (err) resolve({ ok: false, error: String(err.message).slice(0, 300) });
+      else resolve({ ok: true });
     });
   });
 }
@@ -53,7 +63,6 @@ export class BackupManager {
   }
 
   ensureRemote(d) {
-    // 为目标生成 rclone remote 配置（写入 rclone.conf 到 tools 旁）
     const confDir = path.dirname(RCLONE_PATH);
     const confPath = path.join(confDir, 'rclone.conf');
     const lines = [
@@ -68,18 +77,64 @@ export class BackupManager {
     return confPath;
   }
 
+  async packArchive(stamp) {
+    // 跨平台：系统自带 tar（Windows 10+ 为 bsdtar）打包为 .tar.gz
+    const tmpDir = path.join(this.hubDataDir, '..', 'backup-tmp');
+    fs.mkdirSync(tmpDir, { recursive: true });
+    const file = path.join(tmpDir, 'aiassets-backup-' + stamp + '.tar.gz');
+    const dirs = [this.hubDataDir, ...this.storageDirs].filter(d => fs.existsSync(d));
+    // 打包各目录的 basename（解包后还原目录名）
+    const packResult = await runTar(['-czf', file, ...dirs.map(d => path.basename(d))], path.dirname(dirs[0]));
+    if (!packResult.ok) return packResult;
+    try { return { ok: true, file, sizeBytes: fs.statSync(file).size }; }
+    catch (e) { return { ok: false, error: e.message }; }
+  }
+
+  mirrorDir(src, dest) {
+    fs.mkdirSync(dest, { recursive: true });
+    let copied = 0;
+    const srcEntries = new Set(fs.readdirSync(src));
+    for (const name of srcEntries) {
+      const s = path.join(src, name);
+      const d = path.join(dest, name);
+      const st = fs.statSync(s);
+      if (st.isDirectory()) copied += this.mirrorDir(s, d);
+      else { fs.copyFileSync(s, d); copied++; }
+    }
+    for (const name of fs.readdirSync(dest)) {
+      if (!srcEntries.has(name)) fs.rmSync(path.join(dest, name), { recursive: true, force: true });
+    }
+    return copied;
+  }
+
+  async runLocalMirror(dir) {
+    // 本地镜像：Node fs 递归复制（跨平台）
+    const dirs = [this.hubDataDir, ...this.storageDirs].filter(d => fs.existsSync(d));
+    const results = [];
+    for (const d of dirs) {
+      const dest = path.join(dir, path.basename(d));
+      try {
+        const copied = this.mirrorDir(d, dest);
+        results.push({ dir: path.basename(d), ok: true, files: copied });
+      } catch (e) {
+        results.push({ dir: path.basename(d), ok: false, error: e.message });
+      }
+    }
+    return results;
+  }
+
   async runOne(dest) {
     const stamp = new Date().toISOString().slice(0, 10);
     const results = [];
-    // 1) 打包为 zip（保证一致性 + 便于恢复）
-    const zipPath = await this.packZip(dest.id + '-' + stamp);
-    if (!zipPath.ok) return { id: dest.id, name: dest.name, ok: false, error: zipPath.error, files: [] };
-    results.push({ step: 'pack', ok: true, file: zipPath.file, sizeBytes: zipPath.sizeBytes });
+    // 1) 打包为 tar.gz（保证一致性 + 便于恢复）
+    const pack = await this.packArchive(dest.id + '-' + stamp);
+    if (!pack.ok) return { id: dest.id, name: dest.name, ok: false, error: pack.error, files: [] };
+    results.push({ step: 'pack', ok: true, file: pack.file, sizeBytes: pack.sizeBytes });
 
     // 2) 推送到远端
     const confPath = this.ensureRemote(dest);
-    const remote = dest.id + ':' + (dest.prefix ? dest.prefix.replace(/^\/+|\/+$/g, '') + '/' : '') + path.basename(zipPath.file);
-    const push = await runRclone(['--config', confPath, 'copy', zipPath.file, remote, '--no-check-dest']);
+    const remote = dest.id + ':' + (dest.prefix ? dest.prefix.replace(/^\/+|\/+$/g, '') + '/' : '') + path.basename(pack.file);
+    const push = await runRclone(['--config', confPath, 'copy', pack.file, remote, '--no-check-dest']);
     results.push({ step: 'push', ok: push.ok, error: push.error, remote });
     if (!push.ok) return { id: dest.id, name: dest.name, ok: false, steps: results };
 
@@ -96,43 +151,6 @@ export class BackupManager {
       } catch {}
     }
     return { id: dest.id, name: dest.name, ok: true, steps: results };
-  }
-
-  async packZip(stamp) {
-    // 使用 rclone 的 zip？rclone 无 zip。改用 Node 内置：无 zip 库 → 用 tar？Windows 10+ 自带 tar.exe
-    const tmpDir = path.join(this.hubDataDir, '..', 'backup-tmp');
-    fs.mkdirSync(tmpDir, { recursive: true });
-    const file = path.join(tmpDir, 'agent-sync-hub-backup-' + stamp + '.zip');
-    // 用 PowerShell Compress-Archive 兜底（单文件 zip，排除 lock 文件）
-    const dirs = [this.hubDataDir, ...this.storageDirs].filter(d => fs.existsSync(d));
-    return new Promise((resolve) => {
-      execFile('powershell', ['-NoProfile', '-Command',
-        '$ErrorActionPreference="Stop"; ' +
-        dirs.map((d, i) => 'Copy-Item -Recurse -Force "' + d + '" "$env:TEMP\\ashub-' + i + '"; ').join('') +
-        'Compress-Archive -Force -Path ' + dirs.map((d, i) => '"$env:TEMP\\ashub-' + i + '"').join(', ') + ' -DestinationPath "' + file + '"; ' +
-        dirs.map((d, i) => 'Remove-Item -Recurse -Force "$env:TEMP\\ashub-' + i + '"; ').join('')
-      ], { timeout: 10 * 60 * 1000, windowsHide: true }, (err) => {
-        if (err) return resolve({ ok: false, error: String(err.message).slice(0, 300) });
-        try { resolve({ ok: true, file, sizeBytes: fs.statSync(file).size }); } catch (e) { resolve({ ok: false, error: e.message }); }
-      });
-    });
-  }
-
-  async runLocalMirror(dir) {
-    // 本地镜像：直接 robocopy（PowerShell 调用），/MIR 镜像
-    const dirs = [this.hubDataDir, ...this.storageDirs].filter(d => fs.existsSync(d));
-    const results = [];
-    for (let i = 0; i < dirs.length; i++) {
-      const dest = path.join(dir, path.basename(dirs[i]));
-      const res = await new Promise((resolve) => {
-        execFile('robocopy', [dirs[i], dest, '/MIR', '/NFL', '/NDL', '/NJH', '/R:2', '/W:5'], { timeout: 10 * 60 * 1000, windowsHide: true }, (err, stdout) => {
-          // robocopy 退出码 0-7 都是成功
-          resolve({ ok: !err || err.code <= 7, code: err ? err.code : 0 });
-        });
-      });
-      results.push({ dir: path.basename(dirs[i]), ...res });
-    }
-    return results;
   }
 
   async runNow() {
