@@ -35,8 +35,8 @@ pnpm run build:mac     # macOS DMG
 
 ## 配置文件位置
 
-- Windows: %APPDATA%/agent-sync-hub-desktop/config/client-config.json
-- macOS: ~/Library/Application Support/agent-sync-hub-desktop/config/client-config.json
+- Windows: %APPDATA%/aiassets-desktop/config/client-config.json
+- macOS: ~/Library/Application Support/aiassets-desktop/config/client-config.json
 
 ## 开发调试
 

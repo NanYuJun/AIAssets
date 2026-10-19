@@ -28,7 +28,7 @@
 确保当前处于 Node.js 20+ 环境：
 ```bash
 # 切换到项目根目录
-cd agent-sync-hub
+cd aiassets
 
 # 1. 扫描并列出本机所有的 Codex 历史会话
 node src/cli/index.js list

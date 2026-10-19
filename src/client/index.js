@@ -16,7 +16,7 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 
-const CONFIG_DIR = path.join(os.homedir(), '.agent-sync-hub');
+const CONFIG_DIR = fs.existsSync(path.join(os.homedir(), '.aiassets')) || !fs.existsSync(path.join(os.homedir(), '.agent-sync-hub')) ? path.join(os.homedir(), '.aiassets') : path.join(os.homedir(), '.agent-sync-hub');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'client-config.json');
 const STATE_PATH = path.join(CONFIG_DIR, 'client-state.json');
 
