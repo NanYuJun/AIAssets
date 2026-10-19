@@ -182,6 +182,9 @@ function findSessionFile(files, sessionId) {
     const basename = path.basename(filePath, '.jsonl');
     // Gemini 映射路径磁盘上不存在（transcript.jsonl 的虚拟名），需要解析真实路径
     if (filePath.includes('gemini-session-') && sessionId.includes(filePath.match(/gemini-session-([^\\/]+)\.jsonl/)?.[1] || '')) return true;
+    if (filePath.includes('.grok\\sessions\\') || filePath.includes('.grok/sessions/')) {
+      return path.dirname(filePath).replace(/\\/g, '/').includes(sessionId);
+    }
     return basename === sessionId || basename.endsWith(`-${sessionId}`) || basename.endsWith(`_${sessionId}`) || basename.includes(sessionId);
   });
 }
@@ -1423,6 +1426,36 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { success: true, session: s });
   }
 
+
+  const claudeFile = findSessionFile(ClaudeReader.scanAllSessions(), id);
+  if (claudeFile) {
+    const s = await ClaudeReader.parseSession(claudeFile, projectResolver);
+    return sendJson(res, 200, { success: true, session: s });
+  }
+
+  const zcodeFile = findSessionFile(ZCodeReader.scanAllSessions(), id);
+  if (zcodeFile) {
+    const s = await ZCodeReader.parseSession(zcodeFile, projectResolver);
+    return sendJson(res, 200, { success: true, session: s });
+  }
+
+  const opencodeFile = findSessionFile(OpenCodeReader.scanAllSessions(), id);
+  if (opencodeFile) {
+    const s = await OpenCodeReader.parseSession(opencodeFile, projectResolver);
+    return sendJson(res, 200, { success: true, session: s });
+  }
+
+  const grokFile = findSessionFile(GrokReader.scanAllSessions(), id);
+  if (grokFile) {
+    const s = await GrokReader.parseSession(grokFile, projectResolver);
+    return sendJson(res, 200, { success: true, session: s });
+  }
+
+  const cursorFile = findSessionFile(CursorReader.scanAllSessions(), id);
+  if (cursorFile) {
+    const s = await CursorReader.parseSession(cursorFile, projectResolver);
+    return sendJson(res, 200, { success: true, session: s });
+  }
       return sendJson(res, 404, { success: false, error: '未找到指定会话' });
     } catch (err) {
       return sendJson(res, 500, { success: false, error: err.message });

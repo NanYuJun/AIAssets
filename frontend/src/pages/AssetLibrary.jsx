@@ -77,7 +77,9 @@ export default function AssetLibrary({ showToast, refreshKey, onRefresh, isGuest
     const merged = [...localById.values()].map(s => {
       const c = cloudById.get(s.id)
       if (c) cloudById.delete(s.id)
-      return { ...s, projectName: s.projectName || c?.projectName || '' , agents: [...new Set([...s.localAgents, ...(c?.sourceAgent ? [c.sourceAgent] : [])])], isLocal: true, isCloud: !!c, shareOrigin: c?.shareOrigin || null, originalCwd: s.cwd || c?.originalCwd || '' }
+      const localDefault = !s.projectName || s.projectName === '最近对话 (未归档项目)' || s.projectName === '未分类';
+      const projName = (!localDefault && s.projectName) ? s.projectName : (c?.projectName || s.projectName || '');
+      return { ...s, projectName: projName, agents: [...new Set([...s.localAgents, ...(c?.sourceAgent ? [c.sourceAgent] : [])])], isLocal: true, isCloud: !!c, shareOrigin: c?.shareOrigin || null, originalCwd: s.cwd || c?.originalCwd || '' }
     })
     for (const c of cloudById.values()) {
       merged.push({ id: c.id, agent: c.sourceAgent || 'codex', title: c.title, originalCwd: c.originalCwd || '', projectName: c.projectName, messageCount: c.messageCount, toolCallCount: c.toolCallCount, updatedAt: c.updatedAt || c.createdAt, agents: [c.sourceAgent || 'codex'], isLocal: false, isCloud: true, shareOrigin: c.shareOrigin || null })
