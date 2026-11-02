@@ -2,6 +2,7 @@
   "name": "aiassets",
   "version": "1.0.0",
   "description": "Agent Sync Hub 轻客户端 - 连接中心 Hub 自动同步本机 AI Agent 会话",
+  "homepage": "https://github.com/NanYuJun/AIAssets",
   "author": "Agent Sync Hub",
   "main": "main.js",
   "scripts": {
