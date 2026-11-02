@@ -936,14 +936,17 @@ const server = http.createServer(async (req, res) => {
           warnings.push({ source: 'codex_state_db', error: err.message });
         }
         projects = applyCodexLabelsToWorkBuddy(codexProjects, workBuddyProjects);
-      } else {
+      } else if (agent === 'pi') {
         projects = PiReader.listProjects();
+      } else {
+        // dsh / claude / zcode / opencode / grok / cursor：数据源未提供项目目录 API，返回空列表
+        projects = [];
       }
 
       return sendJson(res, 200, {
         success: true,
         agent,
-        source: agent === 'codex' ? 'codex_state_db' : agent === 'workbuddy' ? 'workbuddy_db' : agent === 'pi' ? 'pi_sessions_dir' : 'gemini_brain_dir',
+        source: agent === 'codex' ? 'codex_state_db' : agent === 'workbuddy' ? 'workbuddy_db' : agent === 'pi' ? 'pi_sessions_dir' : 'not_supported',
         readAt: Date.now(),
         count: projects.length,
         projects,
@@ -1755,6 +1758,16 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         return sendJson(res, 500, { success: false, error: err.message });
       }
+    }
+
+    if (action === '/delete' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const me = currentUser(req, url);
+      const share = shares.get(shareId);
+      if (!share) return sendJson(res, 404, { success: false, error: '分享不存在' });
+      if (me?.role !== 'admin' && share.ownerId !== me?.userId) return sendJson(res, 403, { success: false, error: '无权删除此分享' });
+      const ok = shares.remove(shareId);
+      return ok ? sendJson(res, 200, { success: true }) : sendJson(res, 404, { success: false, error: '删除失败' });
     }
 
     if (action === '/revoke' && req.method === 'POST') {

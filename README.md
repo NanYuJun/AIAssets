@@ -21,13 +21,13 @@
 ## ✨ 特性
 
 - 🔀 **跨 Agent 迁移** — 10 个 Agent 任意互导：Codex / WorkBuddy / Claude Code / Gemini CLI / DSH (DeepSeek) / Pi / ZCode / OpenCode / Grok Build / Cursor，且保留 AI 生成的会话标题
-- ☁️ **跨设备同步** — 服务端做 Hub，笔记本/台式机轻客户端自动双向同步（频率可调）
+- ☁️ **跨设备同步** — 服务端做 Hub，笔记本/台式机轻客户端自动双向同步（每 60 秒轮询）；Hub 端「自动上云」频率可调
 - 🔗 **分享** — 为朋友生成带访问码 + 查看次数上限的分享链接，一键导入到他的 Hub
 - 🗂 **会话集** — 按项目组织会话，一键打包导出 ZIP
 - 🛡 **容灾备份** — 本地镜像 + Cloudflare R2 / 阿里云 OSS / 腾讯 COS 定时打包备份，多目标异地容灾
 - 👥 **多用户** — 账号密码登录、成员权限、游客模式（仅迁移）、登录防爆破
 - 🔍 **全文搜索** — 毫秒级检索全部会话内容
-- 🗑 **回收站** — 删除的会话保留 30 天，可恢复防误删
+- 🗑 **回收站** — 删除本地会话前自动备份，保留 30 天，可通过文件系统恢复防误删
 - 🌓 **白天/黑夜模式** — 两套品牌 Logo 自动适配
 - 🖥 **桌面客户端** — Electron，托盘常驻、自动同步、无边框窗口、自动更新
 - 🔄 **自动更新** — 客户端从 GitHub Releases 或 Hub 自动检查下载新版本
@@ -118,7 +118,7 @@ pnpm run build:desktop
 ```bash
 node src/client/index.js config --hub http://hub:4891 --user admin
 node src/client/index.js sync      # 双向同步
-node src/client/index.js daemon    # 后台守护，按配置频率自动同步
+node src/client/index.js daemon    # 后台守护，每 60 秒自动双向同步
 ```
 
 ## 📦 功能总览
@@ -128,17 +128,18 @@ node src/client/index.js daemon    # 后台守护，按配置频率自动同步
 - 统一会话仓库：本地 + 云端合并展示、分组/平铺视图、按 Agent 筛选
 - 会话详情预览（Markdown 渲染）、导出 Markdown / ZIP
 - 跨 Agent 迁移时**保留 AI 生成标题**（读取各 Agent 本地数据库）
+- 迁移对话框为双面板穿梭布局：左侧按项目分组展示勾选会话，右侧选择目标 Agent 与项目（Codex / WorkBuddy / Pi 提供实时项目列表，其余 Agent 使用自定义路径）
 - 回收站（30 天保留，防误删）、远程访问日志
 
 ### 分享与协作
 
-- 分享链接：访问码 + 查看次数上限 + 到期撤销 + 一键导入
+- 分享链接：访问码 + 查看次数上限 + 到期撤销与删除 + 一键导入
 - 会话集：按主题分组打包、批量分享/导出
 
 ### 自动化
 
-- 自动上云：可配监听哪些 Agent、同步频率（10 分钟 ~ 6 小时）
-- 容灾备份：本地镜像 + 多云端目标、频率可调、保留份数滚动清理
+- 自动上云（Hub 端）：可配监听哪些 Agent、同步频率（10 分钟 ~ 6 小时，默认 30 分钟）
+- 容灾备份：本地镜像（robocopy /MIR）+ Cloudflare R2 / 阿里云 OSS / 腾讯 COS / S3 多云端目标、备份频率可调（1~24 小时）、按目标保留份数滚动清理（默认 14 份）；云端目标依赖 tools/rclone.exe
 - 桌面客户端托盘常驻，关闭窗口后台继续同步
 
 ### 安全
@@ -154,7 +155,7 @@ node src/client/index.js daemon    # 后台守护，按配置频率自动同步
 | :--- | :--- |
 | [部署文档](./docs/DEPLOYMENT.md) | 服务端 / 轻客户端 / 多设备同步 / FAQ |
 | [发布流程](./docs/RELEASE.md) | 版本发布与自动更新分发 |
-| [设计 Wiki](./docs/wiki/) | 架构、各 Agent 存储逆向、数据规范等 15 篇 |
+| [设计 Wiki](./docs/wiki/) | 架构、各 Agent 存储逆向、数据规范等 16 篇 |
 | [备份配置示例](./docs/backup-config.sample.json) | 容灾备份配置参考 |
 
 ## 🛡 安全说明
@@ -169,7 +170,7 @@ node src/client/index.js daemon    # 后台守护，按配置频率自动同步
 - [ ] Skills 资源管理
 - [ ] MCP 工具配置管理
 - [ ] 会话云端分页加载（服务端已支持）
-- [ ] macOS / Linux 客户端打包
+- [ ] macOS / Linux 客户端打包验证（GitHub Actions CI 已配置三平台构建）
 - [ ] 会话导入去重策略增强
 
 ## 🤝 参与贡献

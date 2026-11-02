@@ -95,6 +95,13 @@ export class ShareManager {
     return true;
   }
 
+  remove(shareId) {
+    const record = this.get(shareId);
+    if (!record) return false;
+    fs.rmSync(this.sharePath(shareId), { force: true });
+    return true;
+  }
+
   list() {
     return fs.readdirSync(this.sharesDir)
       .filter(f => f.endsWith('.json'))

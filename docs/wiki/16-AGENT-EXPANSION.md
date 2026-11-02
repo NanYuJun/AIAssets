@@ -58,6 +58,8 @@
 7. 拉取注入 writer 分支
 8. import-incoming sourceAgent 白名单
 
+> 注：当前 codex / workbuddy / pi 三个 Agent 提供真实项目列表数据源；gemini / dsh / claude / zcode / opencode / grok / cursor 迁移时需使用自定义目标路径。
+
 ## 5. Trae CN / Claude Desktop 为何暂不支持
 
 - **Trae CN**：对话内容存储在字节云端，本地 IndexedDB/leveldb 仅为缓存，无可靠会话数据

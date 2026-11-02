@@ -45,6 +45,16 @@ export default function ShareManage({ showToast, globalLoading, setGlobalLoading
     } catch (e) { showToast(e.message, false) } finally { setGlobalLoading(false) }
   }
 
+  const deleteShare = async (s) => {
+    const ok = await dialog.confirm({ title: '删除分享', message: '确定彻底删除此分享？删除后链接立即失效，不可恢复。', confirmText: '删除', danger: true });
+    if (!ok) return;
+    try {
+      await api(`/api/shares/${s.shareId}/delete`, { method: 'POST' });
+      showToast('分享已删除');
+      await load();
+    } catch (e) { showToast(e.message, false); }
+  }
+
   return (
     <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-zinc-800/80 flex items-center gap-2.5">
@@ -72,7 +82,10 @@ export default function ShareManage({ showToast, globalLoading, setGlobalLoading
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {!s.revoked && <button onClick={() => copyLink(s)} className="text-[11px] px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300">复制链接</button>}
-                {!s.revoked && <button onClick={() => revoke(s)} className="text-[11px] px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30">撤销</button>}
+                {!s.revoked && (<>
+                <button onClick={() => revoke(s)} className="text-[11px] px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30">撤销</button>
+                <button onClick={() => deleteShare(s)} className="text-[11px] px-2.5 py-1 rounded-md bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30">删除</button>
+              </>)}
               </div>
             </div>
           ))

@@ -45,9 +45,9 @@ cloudflared tunnel --url http://localhost:4891
 
 ### 1.4 安全设置
 
-1. 启用鉴权：设置页 -> 开启访问控制 -> 设置管理员用户名和密码
-2. 生成 Token：设置页 -> Token 管理 -> 新建 Token（给轻客户端用）
-3. 建议 HTTPS（Cloudflare Tunnel 或 Caddy 自动处理）
+1. 启用鉴权：浏览器首次访问 Hub -> 初始化管理员账号密码（桌面客户端首次连接会引导完成同样流程）
+2. 建议 HTTPS（Cloudflare Tunnel 或 Caddy 自动处理）
+3. 轻客户端统一使用「Hub 地址 + 账号 + 密码」登录，登录成功后自动换发设备 Token（可在 Hub 的「我的设备 / Token 管理」中单独吊销）
 
 ---
 
@@ -74,9 +74,10 @@ pnpm run build:mac     # macOS 安装包
 #### 使用
 
 1. 将安装包拷贝到目标电脑，双击安装
-2. 启动后自动打开首次配对窗口：
+2. 启动后自动打开登录窗口：
    - 填入 Hub 地址（如 https://your-hub.example.com）
-   - 填入在 Hub 设置页生成的 Token
+   - 填入账号 + 密码（首次连接未初始化的 Hub 会引导设置管理员账号；设备登录自动换发 Token）
+   - 只需要迁移功能可点「跳过登录，仅使用会话迁移功能」进入游客模式
    - 勾选「自动同步（每 60 秒）」
 3. 点击保存并连接，自动跳转 Web UI
 4. 之后系统托盘常驻，可随时右键立即同步或打开 AIAssets
@@ -85,7 +86,7 @@ pnpm run build:mac     # macOS 安装包
 
 | 功能 | 说明 |
 | :--- | :--- |
-| 首次配对 | 填 Hub 地址 + Token，验证连通性 |
+| 首次配对 | 填 Hub 地址 + 账号密码，验证连通性并自动换发设备 Token |
 | 自动同步 | 每 60 秒轮询，推本地新会话 + 拉云端新会话 |
 | 托盘常驻 | 关闭窗口不退出，右键托盘菜单操作 |
 | 手动同步 | 托盘右键 -> 立即同步 |
@@ -100,8 +101,7 @@ pnpm run build:mac     # macOS 安装包
 #### 步骤
 
 1. 拷贝项目目录到本机
-2. 在中心 Hub 的设置页 Token 管理 -> 新建 Token
-3. 配置并同步：
+2. 配置并同步（CLI 使用设备 Token；先在 Hub 设置页 Token 管理新建，或使用桌面端登录自动生成）：
 
 ```bash
 # 配置（一次性）
@@ -133,7 +133,7 @@ node src/client/index.js daemon
 
 1. 在新设备上安装 Agent（如 Codex）
 2. 安装轻客户端（桌面应用或 CLI）
-3. 配置 Hub 地址 + Token
+3. 配置 Hub 地址 + 设备 Token
 4. 执行 sync（或等待自动同步触发）
 5. 本机 Agent 目录会自动出现云端会话，重启 Agent 即可看到
 
@@ -175,7 +175,7 @@ AIAssets/
     setup.html            # 首次配对页
     package.json          # electron-builder 配置
   frontend/               # React 前端源码
-  docs/wiki/              # 设计文档（15 篇）
+  docs/wiki/              # 设计文档（16 篇）
   hub-data/               # Hub 运行时数据
   cloud-hub-storage/      # 云端会话文件存储
   package.json            # 项目根（无 npm 依赖）

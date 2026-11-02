@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, copyText } from '../lib/api'
 import { useDialog } from '../components/DialogProvider'
 import RecycleBinDialog from '../components/RecycleBinDialog'
+import TransferDialog from '../components/TransferDialog'
 
 const AGENT_LABELS = { codex: 'Codex', workbuddy: 'WorkBuddy', pi: 'Pi', gemini: 'Gemini', dsh: 'DSH', claude: 'Claude', zcode: 'ZCode', opencode: 'OpenCode', grok: 'Grok', cursor: 'Cursor' }
 const AGENT_STYLES = {
@@ -22,13 +23,7 @@ const genAccessCode = () => Array.from({ length: 6 }, () => 'abcdefghjkmnpqrstuv
 export default function AssetLibrary({ showToast, refreshKey, onRefresh, isGuest, globalLoading, setGlobalLoading }) {
   const dialog = useDialog()
   const [recycleOpen, setRecycleOpen] = useState(false)
-  const [pullDialogOpen, setPullDialogOpen] = useState(false)
-  const [pullAgent, setPullAgent] = useState('workbuddy')
-  const [pullPath, setPullPath] = useState('')
-  const [pullCount, setPullCount] = useState(0)
-  const [pullLoading, setPullLoading] = useState(false)
-  const [pullProjects, setPullProjects] = useState([])
-  const [pullProjectsStatus, setPullProjectsStatus] = useState('')
+  const [transferOpen, setTransferOpen] = useState(false)
   const [sessions, setSessions] = useState([])
   const [cloud, setCloud] = useState([])
   const [selected, setSelected] = useState(new Set())
@@ -167,53 +162,11 @@ export default function AssetLibrary({ showToast, refreshKey, onRefresh, isGuest
       setGlobalLoading(false)
     }
   }
-  const pullSelected = async () => {
-    if (!selectedAssets.length) return showToast('请至少勾选一个会话', false)
-    const ids = selectedAssets.map(s => s.id)
-    const agents = new Set(selectedAssets.flatMap(s => s.agents))
-    const known = ['codex', 'workbuddy', 'pi', 'gemini', 'dsh']
-    const missing = known.filter(a => !agents.has(a))
-    const preferred = missing.length === known.length - 1 ? missing[0] : 'workbuddy'
-    window.__pendingPullIds = ids
-    setPullAgent(preferred); setPullCount(ids.length); setPullPath('')
-    setPullDialogOpen(true)
-    loadPullProjects(preferred)
+  const openTransfer = () => {
+    if (!selectedAssets.length) return showToast('请先勾选会话', false)
+    setTransferOpen(true)
   }
-  const saveRecentProject = (agent, p) => {
-    try {
-      const store = JSON.parse(localStorage.getItem('recent-projects') || '{}')
-      const list = store[agent] || []
-      const next = [p, ...list.filter(x => x !== p)].slice(0, 5)
-      store[agent] = next
-      localStorage.setItem('recent-projects', JSON.stringify(store))
-    } catch {}
-  }
-  const getRecentProjects = (agent) => {
-    try { return JSON.parse(localStorage.getItem('recent-projects') || '{}')[agent] || [] } catch { return [] }
-  }
-  const confirmPull = async () => {
-    if (!pullPath.trim()) return
-    setPullLoading(true)
-    try {
-      const d = await api('/api/sessions/pull', { method: 'POST', body: { sessionIds: window.__pendingPullIds, targetAgent: pullAgent, targetProjectRoot: pullPath.trim() } })
-      saveRecentProject(pullAgent, pullPath.trim())
-      showToast(`已同步 ${d.count} 个会话到 ${AGENT_LABELS[pullAgent]}`)
-      setPullDialogOpen(false)
-      setSelected(new Set()); await load()
-    } catch (e) { showToast(e.message, false) } finally { setPullLoading(false) }
-  }
-  const loadPullProjects = async (agent) => {
-    setPullProjects([])
-    setPullProjectsStatus('正在实时读取项目...')
-    try {
-      const d = await api('/api/projects?agent=' + encodeURIComponent(agent) + '&ts=' + Date.now())
-      setPullProjects(d.projects || [])
-      setPullProjectsStatus('实时读取 '+d.projects.length+' 个项目')
-    } catch (e) {
-      setPullProjectsStatus('项目读取失败，可手动输入路径：'+e.message)
-    }
-  }
-  const shareSelected = async () => {
+          const shareSelected = async () => {
     if (!selectedAssets.length) return showToast('请先勾选会话', false)
     const code = await dialog.prompt({ title: '分享选中的会话', message: `将创建包含 ${selectedAssets.length} 个会话的分享链接（7 天有效，50 次查看上限）。访问码：`, placeholder: '访问码（留空自动生成）', confirmText: '生成分享' })
     if (code === null) return
@@ -310,11 +263,11 @@ export default function AssetLibrary({ showToast, refreshKey, onRefresh, isGuest
         </div>
       </div>
       <button onClick={() => openPreview(s.id)} className="text-xs text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 transition-all shrink-0">预览</button>
-      {!isGuest && (<>
+      {!isGuest && (<div>
       <button onClick={() => shareSingle(s)} className="text-xs text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 transition-all shrink-0">分享</button>
       <button onClick={() => exportMd(s)} title="导出为 Markdown" className="text-xs text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 transition-all shrink-0">导出</button>
       <button onClick={() => setDeleteTarget({ type: 'multi', session: s })} title="删除会话" className="text-xs text-rose-300 hover:text-rose-200 px-2 py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all shrink-0">删除</button>
-      </>)}
+      </div>)}
     </div>
   )
 
@@ -400,15 +353,15 @@ export default function AssetLibrary({ showToast, refreshKey, onRefresh, isGuest
         <span className="text-xs text-zinc-400">已选择 {selected.size} 项 · 可上传 {selectedAssets.filter(s => s.isLocal).length} · 可同步 {selectedAssets.length}</span>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <button onClick={toggleSelectAll} className="text-xs text-zinc-400 hover:text-zinc-200 px-2 py-1 rounded hover:bg-zinc-800">全选/反选</button>
-          {!isGuest && (<>
+          {!isGuest && (<div>
           <button onClick={shareSelected} className="text-xs text-zinc-400 hover:text-zinc-200 px-2 py-1 rounded hover:bg-zinc-800">分享</button>
           <button onClick={createCollection} className="px-3 py-2 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700">加入会话集</button>
           <button onClick={pushSelected} disabled={globalLoading} className="px-4 py-2 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white disabled:opacity-50 inline-flex items-center gap-2">
             {globalLoading && <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
             同步云端
           </button>
-          </>)}
-          <button onClick={pullSelected} disabled={globalLoading} className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 inline-flex items-center gap-2">
+          </div>)}
+          <button onClick={openTransfer} disabled={globalLoading} className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 inline-flex items-center gap-2">
             {globalLoading && <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>}
             同步/迁移本地
           </button>
@@ -501,41 +454,8 @@ export default function AssetLibrary({ showToast, refreshKey, onRefresh, isGuest
         )
       })()}
 
-      {pullDialogOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setPullDialogOpen(false) }}>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full p-6">
-            <h3 className="text-sm font-semibold text-zinc-100 mb-1">同步到本地 Agent</h3>
-            <p className="text-xs text-zinc-400 mb-4">将 {pullCount} 个会话注入到 {AGENT_LABELS[pullAgent]}，会话内路径将自动重写到目标项目路径。</p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs text-zinc-300 mb-1.5">目标 Agent</label>
-                <select value={pullAgent} onChange={e => { setPullAgent(e.target.value); loadPullProjects(e.target.value) }} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100">
-                  {['workbuddy', 'codex', 'pi', 'gemini', 'dsh'].map(a => <option key={a} value={a}>{AGENT_LABELS[a]}</option>)}
-                </select>
-              </div>
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label className="block text-xs text-zinc-300">目标项目分组</label>
-                  <button type="button" onClick={() => loadPullProjects(pullAgent)} className="text-[11px] text-zinc-400 hover:text-zinc-100">重新读取</button>
-                </div>
-                <select value={pullProjects.some(p => p.path === pullPath) ? pullPath : '__custom__'} onChange={e => setPullPath(e.target.value === '__custom__' ? '' : e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100">
-                  {pullProjects.map(p => <option key={p.path} value={p.path}>{p.label} ({p.path}){p.exists === false ? ' · 路径不存在' : ''}</option>)}
-                  {getRecentProjects(pullAgent).filter(p => !pullProjects.some(pp => pp.path === p)).map(p => <option key={'recent-' + p} value={p}>{p}（最近使用）</option>)}
-                  <option value="__custom__">自定义路径...</option>
-                </select>
-                <p className="text-[11px] text-zinc-500 mt-1">{pullProjectsStatus}</p>
-              </div>
-              <div>
-                <label className="block text-xs text-zinc-300 mb-1.5">目标项目路径（可自定义 / 跨设备路径）</label>
-                <input autoFocus value={pullPath} onChange={e => setPullPath(e.target.value)} placeholder="如 E:/cobazaar/1Ton" className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-brand-500" onKeyDown={e => { if (e.key === 'Enter' && pullPath.trim() && !pullLoading) confirmPull() }} />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2.5 pt-4">
-              <button onClick={() => setPullDialogOpen(false)} className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-100 bg-zinc-800/60">取消</button>
-              <button onClick={confirmPull} disabled={!pullPath.trim() || pullLoading} className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white">{pullLoading ? '同步中...' : '确认同步'}</button>
-            </div>
-          </div>
-        </div>
+      {transferOpen && (
+        <TransferDialog open={transferOpen} onClose={() => setTransferOpen(false)} onDone={() => { load(); setSelected(new Set()) }} showToast={showToast} sessions={selectedAssets.map(s => ({ id: s.id, title: s.title, projectName: s.projectName, sourceAgent: s.agents?.[0] || 'codex' }))} />
       )}
 
       <RecycleBinDialog open={recycleOpen} onClose={() => setRecycleOpen(false)} showToast={showToast} onChanged={onRefresh} />
