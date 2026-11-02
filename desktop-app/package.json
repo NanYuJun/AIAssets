@@ -6,11 +6,11 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build": "electron-builder --win --mac",
+    "build:win": "electron-builder --win --publish never",
+    "build:mac": "electron-builder --mac --publish never",
+    "build": "electron-builder --win --mac --publish never",
     "release:prepare": "node make-latest.cjs",
-    "build:linux": "electron-builder --linux"
+    "build:linux": "electron-builder --linux --publish never"
   },
   "build": {
     "appId": "com.aiassets.app",
@@ -59,7 +59,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "YOUR_GITHUB_USERNAME",
+        "owner": "NanYuJun",
         "repo": "AIAssets"
       }
     ],
