@@ -34,13 +34,22 @@ export class CodexWriter {
     const lines = [];
 
     // 1. session_meta
+    // codex CLI 的 rollout 解析器要求这些字段齐全（session_id / originator / cli_version /
+    // source / model_provider），缺任何一个都会把文件当成空会话，resume 时报
+    // "rollout ... is empty"。桌面端和 CLI 共用 ~/.codex/sessions，所以这里统一按 CLI 的格式写。
+    const nowIso = new Date().toISOString();
     lines.push(JSON.stringify({
-      timestamp: new Date().toISOString(),
+      timestamp: nowIso,
       type: "session_meta",
       payload: {
+        session_id: sessionId,
         id: sessionId,
-        timestamp: new Date().toISOString(),
+        timestamp: nowIso,
         cwd: targetProjectRoot,
+        originator: "codex_cli_rs",
+        cli_version: "0.0.0",
+        source: "cli",
+        model_provider: "openai",
         git: { branch: "master" }
       }
     }));

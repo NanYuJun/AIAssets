@@ -13,6 +13,7 @@
     "!src/server/public-react/",
     "!**/*.test.js",
     "frontend/public/",
+    "README.en.md",
     "README.md",
     "LICENSE",
     "NOTICE"

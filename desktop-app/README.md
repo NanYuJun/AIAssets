@@ -17,13 +17,28 @@ AIAssets 的 Electron 轻客户端。连接中心 Hub，自动同步本机 AI Ag
 ```bash
 pnpm install
 pnpm run build:win     # Windows NSIS 安装包
-pnpm run build:mac     # macOS DMG
+pnpm run build:mac     # macOS DMG + ZIP（Intel + Apple Silicon）
 ```
 
 产物在 dist/ 下：
 
 - AIAssets Setup 1.0.0.exe（约 78 MB）
-- AIAssets-1.0.0.dmg
+- AIAssets-1.0.0.dmg / AIAssets-1.0.0-arm64.dmg（Intel / Apple Silicon）
+- AIAssets-1.0.0-mac.zip / AIAssets-1.0.0-arm64-mac.zip（自动更新用）
+- latest-mac.yml（macOS 自动更新元数据）
+
+应用图标为 `build/icon.png`（1024×1024）与 `build/icon.icns`；改动图标后重新生成 icns：
+
+```bash
+mkdir -p /tmp/aia.iconset
+for s in 16 32 128 256 512; do
+  sips -s format png -z $s $s build/icon.png --out /tmp/aia.iconset/icon_${s}x${s}.png
+  sips -s format png -z $((s*2)) $((s*2)) build/icon.png --out /tmp/aia.iconset/icon_${s}x${s}@2x.png
+done
+iconutil -c icns /tmp/aia.iconset -o build/icon.icns
+```
+
+安装包未签名：首次打开需右键「打开」，或执行 `xattr -dr com.apple.quarantine /Applications/AIAssets.app`。
 
 ## 使用
 

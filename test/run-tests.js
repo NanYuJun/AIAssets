@@ -2,13 +2,14 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { DatabaseSync } from 'node:sqlite';
 import { Cleaner } from '../src/core/cleaner.js';
 import { PathRemapper } from '../src/core/path-remapper.js';
 import { ConfigManager } from '../src/core/config.js';
 import { querySqlite } from '../src/core/sqlite.js';
 import { computeWorkBuddySlug } from '../src/adapters/workbuddy/slug.js';
 import { CodexReader } from '../src/adapters/codex/reader.js';
+import { CodexWriter } from '../src/adapters/codex/writer.js';
 import { WorkBuddyReader } from '../src/adapters/workbuddy/reader.js';
 import { WorkBuddyWriter } from '../src/adapters/workbuddy/writer.js';
 
@@ -95,28 +96,21 @@ async function runTests() {
   fs.mkdirSync(workBuddyHome, { recursive: true });
   fs.mkdirSync(workspacePath, { recursive: true });
 
-  const fixtureScript = String.raw`
-import sqlite3
-import sys
+  const codexDb = new DatabaseSync(path.join(codexHome, 'state_5.sqlite'));
+  codexDb.exec(`
+    CREATE TABLE projects (id TEXT PRIMARY KEY, name TEXT, metadata TEXT, position INTEGER, created_at_ms INTEGER, updated_at_ms INTEGER);
+    CREATE TABLE project_roots (project_id TEXT, position INTEGER, path TEXT);
+    INSERT INTO projects VALUES ('project-1', '测试项目名称', '{}', 0, 1000, 2000);
+    INSERT INTO project_roots VALUES ('project-1', 0, '${workspacePath.replace(/'/g, "''")}');
+  `);
+  codexDb.close();
 
-codex_db, workbuddy_db, workspace = sys.argv[1:]
-connection = sqlite3.connect(codex_db)
-connection.executescript('''
-CREATE TABLE projects (id TEXT PRIMARY KEY, name TEXT, metadata TEXT, position INTEGER, created_at_ms INTEGER, updated_at_ms INTEGER);
-CREATE TABLE project_roots (project_id TEXT, position INTEGER, path TEXT);
-''')
-connection.execute('INSERT INTO projects VALUES (?, ?, ?, ?, ?, ?)', ('project-1', '测试项目名称', '{}', 0, 1000, 2000))
-connection.execute('INSERT INTO project_roots VALUES (?, ?, ?)', ('project-1', 0, workspace))
-connection.commit()
-connection.close()
-
-connection = sqlite3.connect(workbuddy_db)
-connection.execute('CREATE TABLE workspaces (path TEXT, last_opened_at INTEGER)')
-connection.execute('INSERT INTO workspaces VALUES (?, ?)', (workspace, 3000))
-connection.commit()
-connection.close()
-`;
-  execFileSync('python', ['-c', fixtureScript, path.join(codexHome, 'state_5.sqlite'), path.join(workBuddyHome, 'workbuddy.db'), workspacePath]);
+  const workBuddyDb = new DatabaseSync(path.join(workBuddyHome, 'workbuddy.db'));
+  workBuddyDb.exec(`
+    CREATE TABLE workspaces (path TEXT, last_opened_at INTEGER);
+    INSERT INTO workspaces VALUES ('${workspacePath.replace(/'/g, "''")}', 3000);
+  `);
+  workBuddyDb.close();
 
   const previousCodexHome = process.env.CODEX_HOME;
   const previousWorkBuddyHome = process.env.WORKBUDDY_HOME;
@@ -148,12 +142,8 @@ connection.close()
   }
   fs.mkdirSync(mockWbDir, { recursive: true });
   const mockWbDb = path.join(mockWbDir, 'workbuddy.db');
-  const sessionSchemaScript = String.raw`
-import sqlite3
-import sys
-
-connection = sqlite3.connect(sys.argv[1])
-connection.execute('''
+  const mockWbConnection = new DatabaseSync(mockWbDb);
+  mockWbConnection.exec(`
 CREATE TABLE sessions (
   id TEXT PRIMARY KEY,
   cwd TEXT NOT NULL,
@@ -174,12 +164,9 @@ CREATE TABLE sessions (
   thought_level TEXT,
   transport TEXT NOT NULL,
   unread INTEGER NOT NULL
-)
-''')
-connection.commit()
-connection.close()
-`;
-  execFileSync('python', ['-c', sessionSchemaScript, mockWbDb]);
+);
+`);
+  mockWbConnection.close();
 
   const chineseTitleSample = { ...sample, title: '被约谈降薪怎么办' };
   const injectRes = await WorkBuddyWriter.injectSession(chineseTitleSample, 'E:/work/1Ton', {
@@ -199,7 +186,40 @@ connection.close()
   assert.strictEqual(indexedRows[0].custom_title, '被约谈降薪怎么办');
   console.log(`  ✅ 成功在 ${injectRes.jsonlPath} 生成包含全部执行过程的 JSONL 数据 (共 ${jsonlLines.length} 行)`);
 
-  console.log('\n🎉 所有 7 项核心测试全部顺利通过 (7/7 Passed)！');
+  // Test 8: CodexWriter 写出的 rollout 必须符合 codex CLI 的 session_meta 要求
+  console.log('▶ [Test 8] 验证 CodexWriter 生成的 session_meta 可被 codex CLI 识别');
+  const codexFixtureHome = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-sync-codex-'));
+  const previousCodexHomeForWriter = process.env.CODEX_HOME;
+  try {
+    process.env.CODEX_HOME = codexFixtureHome;
+    const fixtureProject = path.join(codexFixtureHome, 'proj');
+    fs.mkdirSync(fixtureProject, { recursive: true });
+    const written = await CodexWriter.injectSession({
+      id: 'codex-writer-fixture',
+      project: { originalCwd: fixtureProject },
+      events: [{ kind: 'message', role: 'user', timestamp: Date.now(), content: '回归测试' }]
+    }, fixtureProject);
+
+    const meta = JSON.parse(fs.readFileSync(written.fullPath, 'utf-8').split('\n')[0]);
+    assert.strictEqual(meta.type, 'session_meta');
+    // CLI 缺其中任一字段都会把 rollout 当成空会话：resume 报 "rollout ... is empty"
+    for (const field of ['session_id', 'id', 'cwd', 'originator', 'cli_version', 'source', 'model_provider']) {
+      assert.ok(meta.payload[field], `session_meta 缺少字段 ${field}，codex resume 会拒绝该会话`);
+    }
+    assert.strictEqual(meta.payload.session_id, 'codex-writer-fixture');
+    assert.strictEqual(meta.payload.cwd, fixtureProject);
+
+    const parsed = await CodexReader.parseSession(written.fullPath);
+    assert.strictEqual(parsed.id, 'codex-writer-fixture');
+    assert.strictEqual(parsed.events.length, 1);
+  } finally {
+    if (previousCodexHomeForWriter === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = previousCodexHomeForWriter;
+    fs.rmSync(codexFixtureHome, { recursive: true, force: true });
+  }
+  console.log('  ✅ session_meta 字段齐全，写出的会话可被 CLI 恢复');
+
+  console.log('\n🎉 所有 8 项核心测试全部顺利通过 (8/8 Passed)！');
 }
 
 runTests().catch(err => {

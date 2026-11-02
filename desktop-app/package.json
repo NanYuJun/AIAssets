@@ -46,8 +46,10 @@
           ]
         }
       ],
-      "icon": "icon.png",
-      "category": "public.app-category.utilities"
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
     },
     "nsis": {
       "oneClick": true,

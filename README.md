@@ -12,6 +12,8 @@
 [![Release](https://img.shields.io/github/v/release/NanYuJun/AIAssets?include_prereleases)](https://github.com/NanYuJun/AIAssets/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](./docs/DEPLOYMENT.md)
 
+[简体中文](./README.md) | [English](./README.en.md)
+
 </div>
 
 ---
