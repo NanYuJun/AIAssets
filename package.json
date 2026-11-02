@@ -4,8 +4,26 @@
   "description": "AIAssets — 你的 AI 资产管理中心：跨设备同步、跨 Agent 迁移、分享与容灾备份（支持 10 个 Agent：Codex / WorkBuddy / Claude Code / Gemini / DSH / Pi / ZCode / OpenCode / Grok Build / Cursor）",
   "type": "module",
   "main": "src/server/index.js",
+  "bin": {
+    "aiassets": "bin/aiassets.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "!src/server/public-react/",
+    "!**/*.test.js",
+    "frontend/public/",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
   "scripts": {
     "start": "node src/server/index.js",
+    "start:bin": "node bin/aiassets.js start",
+    "daemon": "node bin/aiassets.js daemon",
+    "stop": "node bin/aiassets.js stop",
+    "restart": "node bin/aiassets.js restart",
+    "status": "node bin/aiassets.js status",
     "start:cli": "node src/cli/index.js",
     "test": "node test/run-tests.js",
     "build:web": "cd frontend && pnpm install && pnpm run build",

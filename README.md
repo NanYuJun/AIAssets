@@ -92,11 +92,32 @@ MacBook（Agent + 轻客户端）──┐
 ```bash
 git clone https://github.com/NanYuJun/AIAssets.git aiassets
 cd aiassets
-node src/server/index.js
+npm start
+# 或：node src/server/index.js
 # → http://0.0.0.0:4891
 ```
 
 浏览器打开 `http://localhost:4891`，初始化管理员账号。
+
+### 通过 npm 安装（免克隆源码）
+
+```bash
+npm install -g aiassets
+
+aiassets start          # 前台启动（Ctrl+C 停止）
+aiassets daemon         # 后台守护启动
+aiassets status         # 查看运行状态
+aiassets stop           # 停止后台守护
+aiassets restart        # 重启后台守护
+
+# 自定义端口与数据目录：
+aiassets daemon --port 9000 --data D:/aiassets-data
+
+# 轻客户端（连接远端 Hub）：
+aiassets sync --hub http://hub:4891 --token <你的Token>
+```
+
+数据目录默认 `<安装目录>/hub-data`，可用 `--data` 或环境变量 `AIASSETS_DATA` 覆盖；云端存储用 `--storage` 或 `CLOUD_STORAGE_DIR`。
 
 ### 2. 构建前端（首次）
 
